@@ -16,8 +16,41 @@ Key features:
 
 ## Installation
 
+### Using UV (Recommended)
+
+[UV](https://github.com/astral-sh/uv) is a fast Python package manager. Install it first if you haven't:
+
 ```bash
-# From source
+# Install UV
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then install FlowPrint:
+
+```bash
+# Clone and install
+git clone https://github.com/username/flowprint.git
+cd flowprint
+uv sync
+
+# Run with UV
+uv run python examples/reproduce_figures.py --output-dir figures/
+
+# Or activate the virtual environment
+source .venv/bin/activate
+python examples/reproduce_figures.py --output-dir figures/
+```
+
+With development dependencies:
+
+```bash
+uv sync --all-extras
+```
+
+### Using pip
+
+```bash
+# Clone and install
 git clone https://github.com/username/flowprint.git
 cd flowprint
 pip install -e .
@@ -60,6 +93,10 @@ print(f"Regimes: {list(dict.fromkeys(result.regime_names))}")
 The `examples/reproduce_figures.py` script regenerates all figures from the paper:
 
 ```bash
+# With UV
+uv run python examples/reproduce_figures.py --output-dir figures/
+
+# With pip (after installation)
 python examples/reproduce_figures.py --output-dir figures/
 ```
 
@@ -106,7 +143,7 @@ Computed from latent trajectories:
 | Speed | Mean velocity magnitude | High (η² > 0.5) |
 | Explored Variance | State-space coverage | High (η² > 0.5) |
 | Tortuosity | Path curvature | Low for topology contrast |
-| Kinetic Energy | ||v||² intermittency proxy | Medium (η² ~ 0.2) |
+| Kinetic Energy | \|\|v\|\|² intermittency proxy | Medium (η² ~ 0.2) |
 
 ### Discriminability
 

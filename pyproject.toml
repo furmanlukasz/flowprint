@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
@@ -54,6 +55,14 @@ Repository = "https://github.com/username/flowprint"
 
 [tool.hatch.build.targets.wheel]
 packages = ["flowprint"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "black>=23.0",
+]
 
 [tool.ruff]
 line-length = 100
