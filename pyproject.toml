@@ -80,3 +80,12 @@ target-version = ["py39"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"
+
+# UV configuration for CPU-only PyTorch (much faster install in CI/Codespaces)
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
