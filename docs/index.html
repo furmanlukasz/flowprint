@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowPrint: A Dynamical Microscope for Multivariate Oscillatory Signals</title>
+    <meta name="description" content="Validating Regime Recovery on Shared Manifolds - Flow-based fingerprints of dynamical regimes">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- D3.js for network visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --accent: #06b6d4;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --bg: #ffffff;
+            --bg-alt: #f9fafb;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            line-height: 1.6;
+            background: var(--bg);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            padding: 60px 0 40px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 100%);
+        }
+
+        .venue {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .authors {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .authors a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .authors a:hover {
+            text-decoration: underline;
+        }
+
+        .affiliations {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        /* Buttons */
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-alt);
+            border-color: var(--primary);
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Teaser Image */
+        .teaser {
+            max-width: 900px;
+            margin: 0 auto 60px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .teaser img {
+            width: 100%;
+            display: block;
+        }
+
+        /* Sections */
+        section {
+            padding: 60px 0;
+        }
+
+        section:nth-child(even) {
+            background: var(--bg-alt);
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        /* Abstract */
+        .abstract {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            max-width: 800px;
+        }
+
+        /* Key Findings */
+        .findings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 30px;
+        }
+
+        .finding-card {
+            background: var(--bg);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .finding-card h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .finding-card p {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        /* Interactive Demo */
+        .demo-section {
+            background: var(--bg-alt);
+        }
+
+        .demo-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .network-viz {
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        #network-canvas {
+            width: 100%;
+            height: 450px;
+        }
+
+        .topology-controls {
+            background: var(--bg);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .topology-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .topology-btn:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .topology-btn.active {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .topology-btn strong {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .topology-btn span {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .topology-legend {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* Figures Gallery */
+        .figures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        @media (max-width: 500px) {
+            .figures-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .figure-card {
+            background: var(--bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .figure-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .figure-card img {
+            width: 100%;
+            display: block;
+        }
+
+        .figure-card figcaption {
+            padding: 16px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        /* Method Overview */
+        .method-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .method-step {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .method-step h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .method-step p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        /* Citation */
+        .citation-box {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .citation-box pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        footer p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <span class="venue">Preprint 2026</span>
+            <h1>FlowPrint: A Dynamical Microscope for<br>Multivariate Oscillatory Signals</h1>
+            <p class="subtitle">Validating Regime Recovery on Shared Manifolds</p>
+
+            <p class="authors">
+                <a href="#">Łukasz Furman</a><sup>1</sup>,
+                <a href="#">Ludovico Minati</a><sup>2</sup>,
+                <a href="#">Włodzisław Duch</a><sup>1</sup>
+            </p>
+            <p class="affiliations">
+                <sup>1</sup>Nicolaus Copernicus University, Toruń, Poland &nbsp;&nbsp;
+                <sup>2</sup>OIST, Okinawa, Japan
+            </p>
+
+            <div class="buttons">
+                <a href="#" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Paper (PDF)
+                </a>
+                <a href="https://github.com/furmanlukasz/flowprint" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    Code
+                </a>
+                <a href="https://codespaces.new/furmanlukasz/flowprint" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Try in Codespaces
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Teaser -->
+    <div class="container">
+        <div class="teaser">
+            <img src="../figures/fig_analysis_main.png" alt="FlowPrint main analysis showing UMAP embedding, flow fields, and regime-specific metrics">
+        </div>
+    </div>
+
+    <!-- Abstract -->
+    <section>
+        <div class="container">
+            <h2>Abstract</h2>
+            <div class="abstract">
+                <p>
+                    Traditional methods for analyzing multivariate oscillatory signals often reduce dynamics to discrete states
+                    (microstates, HMM states) and compare occupancy statistics. We present <strong>FlowPrint</strong>, a complementary
+                    approach that treats the signal as a continuous trajectory evolving on a learned manifold and characterizes
+                    regimes by <em>how</em> the system moves, not just <em>where</em> it visits.
+                </p>
+                <p>
+                    Using coupled Stuart-Landau oscillators with switchable coupling topologies as ground truth, we validate
+                    that flow-based metrics—speed, tortuosity, explored variance, and kinetic energy—can reliably discriminate
+                    between dynamical regimes on shared latent manifolds. Our framework provides a principled way to fingerprint
+                    brain states in EEG and other multivariate time series.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Network Demo -->
+    <section class="demo-section">
+        <div class="container">
+            <h2>Interactive: Coupling Topologies</h2>
+            <p>Explore how different network topologies create distinct dynamical regimes. Click on each topology to see its structure and characteristic dynamics.</p>
+
+            <div class="demo-container">
+                <div class="network-viz">
+                    <div id="network-canvas"></div>
+                </div>
+
+                <div class="topology-controls">
+                    <h3>Select Topology</h3>
+                    <button class="topology-btn active" data-topology="global">
+                        <strong>🌐 Global</strong>
+                        <span>All-to-all coupling → Full synchronization</span>
+                    </button>
+                    <button class="topology-btn" data-topology="cluster">
+                        <strong>🔷 Cluster</strong>
+                        <span>Modular coupling → Multi-cluster synchrony</span>
+                    </button>
+                    <button class="topology-btn" data-topology="sparse">
+                        <strong>🔸 Sparse</strong>
+                        <span>Random sparse → Desynchronization</span>
+                    </button>
+                    <button class="topology-btn" data-topology="ring">
+                        <strong>🔄 Ring</strong>
+                        <span>Directional ring → Traveling waves</span>
+                    </button>
+
+                    <div class="topology-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #3b82f6;"></div>
+                            <span>Cluster 1</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #8b5cf6;"></div>
+                            <span>Cluster 2</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #06b6d4;"></div>
+                            <span>Cluster 3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Method Overview -->
+    <section>
+        <div class="container">
+            <h2>Method Overview</h2>
+            <p>FlowPrint extracts dynamical fingerprints through a four-stage pipeline:</p>
+
+            <div class="method-steps">
+                <div class="method-step">
+                    <div class="step-number">1</div>
+                    <h4>Phase Extraction</h4>
+                    <p>Hilbert transform extracts instantaneous phase and amplitude from bandpass-filtered signals</p>
+                </div>
+                <div class="method-step">
+                    <div class="step-number">2</div>
+                    <h4>Latent Encoding</h4>
+                    <p>Convolutional autoencoder compresses phase dynamics to low-dimensional trajectory</p>
+                </div>
+                <div class="method-step">
+                    <div class="step-number">3</div>
+                    <h4>Flow Estimation</h4>
+                    <p>UMAP embedding + velocity field estimation reveals regime-specific flow patterns</p>
+                </div>
+                <div class="method-step">
+                    <div class="step-number">4</div>
+                    <h4>Fingerprinting</h4>
+                    <p>Compute flow metrics (speed, tortuosity, variance) as regime discriminators</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Findings -->
+    <section>
+        <div class="container">
+            <h2>Key Findings</h2>
+
+            <div class="findings-grid">
+                <div class="finding-card">
+                    <h4>High Discriminability</h4>
+                    <p>Speed and explored variance achieve η² > 0.5 effect sizes, reliably separating all four topology regimes.</p>
+                </div>
+                <div class="finding-card">
+                    <h4>Distinct Flow Fields</h4>
+                    <p>Each topology produces characteristic flow patterns on the shared UMAP manifold, enabling visual regime identification.</p>
+                </div>
+                <div class="finding-card">
+                    <h4>Kinetic Energy Signatures</h4>
+                    <p>Intermittency of kinetic energy ||v||² differs systematically across regimes, providing an additional biomarker.</p>
+                </div>
+                <div class="finding-card">
+                    <h4>Ground Truth Validation</h4>
+                    <p>Stuart-Landau oscillator simulation provides known regime labels for rigorous method validation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Figures -->
+    <section>
+        <div class="container">
+            <h2>Results Gallery</h2>
+
+            <div class="figures-grid">
+                <figure class="figure-card">
+                    <img src="../figures/fig_flow_fields.png" alt="Flow fields by regime">
+                    <figcaption><strong>Flow Fields.</strong> Regime-specific velocity patterns on the UMAP embedding reveal distinct dynamical signatures.</figcaption>
+                </figure>
+                <figure class="figure-card">
+                    <img src="../figures/fig_discriminability.png" alt="Discriminability analysis">
+                    <figcaption><strong>Discriminability.</strong> ANOVA with η² effect sizes shows speed and explored variance best separate regimes.</figcaption>
+                </figure>
+                <figure class="figure-card">
+                    <img src="../figures/fig_kinetic_energy.png" alt="Kinetic energy analysis">
+                    <figcaption><strong>Kinetic Energy.</strong> ||v||² distributions and intermittency patterns differ systematically across topologies.</figcaption>
+                </figure>
+                <figure class="figure-card">
+                    <img src="../figures/fig_electrode_timeseries.png" alt="Electrode timeseries">
+                    <figcaption><strong>Raw Observations.</strong> Simulated 30-channel EEG-like signals with regime transitions marked.</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <!-- Citation -->
+    <section>
+        <div class="container">
+            <h2>Citation</h2>
+            <div class="citation-box">
+                <button class="copy-btn" onclick="copyBibtex()">Copy BibTeX</button>
+                <pre id="bibtex">@article{furman2026dynamical,
+  title={A Dynamical Microscope for Multivariate Oscillatory Signals:
+         Validating Regime Recovery on Shared Manifolds},
+  author={Furman, Łukasz and Minati, Ludovico and Duch, Włodzisław},
+  journal={TBA},
+  year={2026}
+}</pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>
+                <a href="https://github.com/furmanlukasz/flowprint">GitHub Repository</a> ·
+                <a href="https://github.com/furmanlukasz/flowprint/blob/main/LICENSE">MIT License</a>
+            </p>
+            <p style="margin-top: 12px;">
+                Template inspired by <a href="https://github.com/eliahuhorwitz/Academic-project-page-template">Academic Project Page Template</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Network Visualization Script -->
+    <script>
+        // Network configuration
+        const NUM_NODES = 24;
+        const NODE_RADIUS = 10;
+
+        // Colors for clusters
+        const CLUSTER_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4'];
+
+        // Generate nodes in circular layout
+        function generateNodes() {
+            const nodes = [];
+            const centerX = 350;
+            const centerY = 225;
+            const radius = 160;
+
+            for (let i = 0; i < NUM_NODES; i++) {
+                const angle = (2 * Math.PI * i) / NUM_NODES - Math.PI / 2;
+                const cluster = Math.floor(i / (NUM_NODES / 3));
+                nodes.push({
+                    id: i,
+                    x: centerX + radius * Math.cos(angle),
+                    y: centerY + radius * Math.sin(angle),
+                    cluster: cluster,
+                    color: CLUSTER_COLORS[cluster]
+                });
+            }
+            return nodes;
+        }
+
+        // Generate edges based on topology
+        function generateEdges(topology, nodes) {
+            const edges = [];
+            const n = nodes.length;
+
+            switch (topology) {
+                case 'global':
+                    // All-to-all (sample for visibility)
+                    for (let i = 0; i < n; i++) {
+                        for (let j = i + 1; j < n; j++) {
+                            if (Math.random() < 0.3) { // 30% of edges for visibility
+                                edges.push({ source: i, target: j, strength: 0.3 });
+                            }
+                        }
+                    }
+                    break;
+
+                case 'cluster':
+                    // Within-cluster connections
+                    for (let i = 0; i < n; i++) {
+                        for (let j = i + 1; j < n; j++) {
+                            if (nodes[i].cluster === nodes[j].cluster) {
+                                edges.push({ source: i, target: j, strength: 0.8 });
+                            }
+                        }
+                    }
+                    break;
+
+                case 'sparse':
+                    // Random sparse connections
+                    for (let i = 0; i < n; i++) {
+                        // Each node connects to 2-3 random others
+                        const numConnections = 2 + Math.floor(Math.random() * 2);
+                        for (let c = 0; c < numConnections; c++) {
+                            const j = Math.floor(Math.random() * n);
+                            if (i !== j) {
+                                edges.push({ source: i, target: j, strength: 0.5 });
+                            }
+                        }
+                    }
+                    break;
+
+                case 'ring':
+                    // Directional ring
+                    for (let i = 0; i < n; i++) {
+                        edges.push({
+                            source: i,
+                            target: (i + 1) % n,
+                            strength: 1.0,
+                            directed: true
+                        });
+                    }
+                    break;
+            }
+
+            return edges;
+        }
+
+        // Initialize visualization
+        const svg = d3.select('#network-canvas')
+            .append('svg')
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('viewBox', '0 0 700 450');
+
+        // Arrow marker for directed edges
+        svg.append('defs').append('marker')
+            .attr('id', 'arrowhead')
+            .attr('viewBox', '-0 -5 10 10')
+            .attr('refX', 20)
+            .attr('refY', 0)
+            .attr('orient', 'auto')
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .append('path')
+            .attr('d', 'M 0,-5 L 10,0 L 0,5')
+            .attr('fill', '#94a3b8');
+
+        let nodes = generateNodes();
+        let currentTopology = 'global';
+
+        // Edge and node groups
+        const edgeGroup = svg.append('g').attr('class', 'edges');
+        const nodeGroup = svg.append('g').attr('class', 'nodes');
+
+        // Topology descriptions
+        const descriptions = {
+            global: 'All oscillators coupled to each other → promotes full synchronization',
+            cluster: 'Strong within-cluster coupling → multi-cluster synchrony patterns',
+            sparse: 'Random sparse connections → promotes desynchronization',
+            ring: 'Unidirectional ring coupling → traveling wave propagation'
+        };
+
+        // Add description text
+        const descText = svg.append('text')
+            .attr('x', 350)
+            .attr('y', 430)
+            .attr('text-anchor', 'middle')
+            .attr('fill', '#6b7280')
+            .attr('font-size', '14px');
+
+        function updateNetwork(topology) {
+            currentTopology = topology;
+            const edges = generateEdges(topology, nodes);
+
+            // Update edges
+            const edgeSelection = edgeGroup.selectAll('line')
+                .data(edges, (d, i) => `${d.source}-${d.target}-${i}`);
+
+            edgeSelection.exit()
+                .transition()
+                .duration(300)
+                .attr('stroke-opacity', 0)
+                .remove();
+
+            edgeSelection.enter()
+                .append('line')
+                .attr('x1', d => nodes[d.source].x)
+                .attr('y1', d => nodes[d.source].y)
+                .attr('x2', d => nodes[d.target].x)
+                .attr('y2', d => nodes[d.target].y)
+                .attr('stroke', '#94a3b8')
+                .attr('stroke-width', d => d.strength * 2)
+                .attr('stroke-opacity', 0)
+                .attr('marker-end', d => d.directed ? 'url(#arrowhead)' : null)
+                .transition()
+                .duration(500)
+                .attr('stroke-opacity', d => d.strength * 0.6);
+
+            // Update nodes
+            const nodeSelection = nodeGroup.selectAll('circle')
+                .data(nodes, d => d.id);
+
+            nodeSelection.enter()
+                .append('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', NODE_RADIUS)
+                .attr('fill', d => d.color)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))');
+
+            // Animate nodes for ring topology
+            if (topology === 'ring') {
+                animateRing();
+            }
+
+            // Update description
+            descText.text(descriptions[topology]);
+        }
+
+        function animateRing() {
+            if (currentTopology !== 'ring') return;
+
+            let phase = 0;
+            const animate = () => {
+                if (currentTopology !== 'ring') return;
+
+                phase += 0.05;
+                nodeGroup.selectAll('circle')
+                    .attr('r', (d, i) => {
+                        const wave = Math.sin(phase - (i * 2 * Math.PI / NUM_NODES));
+                        return NODE_RADIUS + wave * 3;
+                    })
+                    .attr('fill-opacity', (d, i) => {
+                        const wave = Math.sin(phase - (i * 2 * Math.PI / NUM_NODES));
+                        return 0.7 + wave * 0.3;
+                    });
+
+                requestAnimationFrame(animate);
+            };
+            animate();
+        }
+
+        // Button handlers
+        document.querySelectorAll('.topology-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.topology-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                updateNetwork(btn.dataset.topology);
+            });
+        });
+
+        // Initialize
+        updateNetwork('global');
+
+        // Copy BibTeX function
+        function copyBibtex() {
+            const bibtex = document.getElementById('bibtex').textContent;
+            navigator.clipboard.writeText(bibtex).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy BibTeX', 2000);
+            });
+        }
+    </script>
+</body>
+</html>
