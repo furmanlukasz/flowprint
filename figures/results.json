@@ -11,49 +11,54 @@
       "ring"
     ]
   },
+  "latent_shape": [
+    10000,
+    32
+  ],
+  "compression_ratio": 4.0,
   "flow_metrics": {
     "global": {
-      "speed": 2.5793282985687256,
-      "speed_cv": 0.8400334715843201,
-      "tortuosity": 1.492488980293274,
-      "explored_variance": 21.390161514282227
+      "speed": 1.5647531747817993,
+      "speed_cv": 4.826777935028076,
+      "tortuosity": 17.969707489013672,
+      "explored_variance": 98.3118896484375
     },
     "cluster": {
-      "speed": 2.3568313121795654,
-      "speed_cv": 0.6297909021377563,
-      "tortuosity": 2.226748466491699,
-      "explored_variance": 18.29994010925293
+      "speed": 1.3683068752288818,
+      "speed_cv": 0.28614020347595215,
+      "tortuosity": 3098.86572265625,
+      "explored_variance": 13.026449203491211
     },
     "sparse": {
-      "speed": 3.768381118774414,
-      "speed_cv": 0.4912082552909851,
-      "tortuosity": 6.122868537902832,
-      "explored_variance": 49.094356536865234
+      "speed": 0.889370322227478,
+      "speed_cv": 0.3586841821670532,
+      "tortuosity": 1476.98876953125,
+      "explored_variance": 6.2031168937683105
     },
     "ring": {
-      "speed": 1.486557126045227,
-      "speed_cv": 0.4588426649570465,
-      "tortuosity": 5.949561595916748,
-      "explored_variance": 20.93526268005371
+      "speed": 0.9666814208030701,
+      "speed_cv": 0.5136749148368835,
+      "tortuosity": 180.91688537597656,
+      "explored_variance": 5.174914360046387
     }
   },
   "discriminability": {
     "speed": {
-      "f_statistic": NaN,
-      "p_value": NaN,
-      "eta_squared": 1.0,
+      "f_statistic": 9.678911209106445,
+      "p_value": 2.817749589212326e-08,
+      "eta_squared": 0.8102506995201111,
       "effect_size": "large"
     },
     "variance": {
-      "f_statistic": NaN,
-      "p_value": NaN,
-      "eta_squared": 1.0,
+      "f_statistic": 0.7206399440765381,
+      "p_value": 0.7471870183944702,
+      "eta_squared": 0.2412339746952057,
       "effect_size": "large"
     },
     "tortuosity": {
-      "f_statistic": NaN,
-      "p_value": NaN,
-      "eta_squared": 0.9999998807907104,
+      "f_statistic": 1.8210034370422363,
+      "p_value": 0.07297459244728088,
+      "eta_squared": 0.4454869031906128,
       "effect_size": "large"
     }
   }

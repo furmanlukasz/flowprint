@@ -325,15 +325,15 @@ def plot_discriminability(
     regime_names: List[str],
     discriminability: Dict[str, Dict[str, float]],
     regime_colors: Optional[Dict[str, str]] = None,
-    figsize: Tuple[float, float] = (14, 4),
+    figsize: Tuple[float, float] = (14, 5),
 ) -> plt.Figure:
     """
     Violin plots of per-window metric distributions by regime.
 
     Args:
         window_metrics: Dict with arrays of per-window metrics
-        window_labels: (n_windows,) regime labels
-        regime_names: List of unique regime names
+        window_labels: (n_windows,) regime labels (indices into regime_names)
+        regime_names: List of regime names (may contain duplicates for cycles)
         discriminability: Dict mapping metric -> discriminability results
         regime_colors: Optional color mapping
         figsize: Figure size
@@ -349,36 +349,102 @@ def plot_discriminability(
             "ring": "#d62728",
         }
 
-    metric_names = ["speed", "variance", "tortuosity"]
+    # Get unique regime names (handling cycles)
+    unique_names = list(dict.fromkeys(regime_names))
+
+    # Map labels (regime indices) to regime names
+    # Build mapping: regime_id -> regime_name
+    label_to_name = {i: regime_names[i] for i in range(len(regime_names))}
+
+    metric_titles = {
+        "speed": "Speed (latent units/step)",
+        "variance": "Explored Variance",
+        "tortuosity": "Path Tortuosity",
+    }
+
     fig, axes = plt.subplots(1, 3, figsize=figsize)
 
-    unique_labels = np.unique(window_labels)
-
-    for ax, metric in zip(axes, metric_names):
+    for ax, metric in zip(axes, ["speed", "variance", "tortuosity"]):
         if metric not in window_metrics:
             continue
 
         values = window_metrics[metric]
-        data = [values[window_labels == lbl] for lbl in unique_labels]
-        colors = [regime_colors.get(regime_names[lbl], "#888888") for lbl in unique_labels]
 
-        parts = ax.violinplot(data, positions=range(len(unique_labels)), showmedians=True)
+        # Group values by regime NAME (not index) to handle multiple cycles
+        data_for_plot = []
+        positions = []
+        colors_for_plot = []
 
-        for i, pc in enumerate(parts["bodies"]):
-            pc.set_facecolor(colors[i])
-            pc.set_alpha(0.7)
+        for i, name in enumerate(unique_names):
+            # Find all regime indices that correspond to this name
+            matching_ids = [idx for idx, n in enumerate(regime_names) if n == name]
+            # Get values for windows belonging to any of these regime indices
+            mask = np.isin(window_labels, matching_ids)
+            vals = values[mask]
 
-        ax.set_xticks(range(len(unique_labels)))
-        ax.set_xticklabels([regime_names[lbl] for lbl in unique_labels])
-        ax.set_ylabel(metric.capitalize())
+            if len(vals) > 0:
+                data_for_plot.append(vals)
+                positions.append(i)
+                colors_for_plot.append(regime_colors.get(name, "#888888"))
 
-        # Add effect size annotation
+        if data_for_plot:
+            # Violin plot with means and medians
+            parts = ax.violinplot(
+                data_for_plot,
+                positions=positions,
+                showmeans=True,
+                showmedians=True,
+            )
+
+            # Color the violins
+            for i, pc in enumerate(parts["bodies"]):
+                pc.set_facecolor(colors_for_plot[i])
+                pc.set_alpha(0.7)
+
+            # Style the lines
+            for partname in ["cmeans", "cmedians", "cbars", "cmins", "cmaxes"]:
+                if partname in parts:
+                    parts[partname].set_color("black")
+                    parts[partname].set_linewidth(1)
+
+        ax.set_xticks(range(len(unique_names)))
+        ax.set_xticklabels(unique_names)
+        ax.set_title(metric_titles.get(metric, metric.capitalize()), fontweight="bold")
+        ax.set_ylabel("Value")
+
+        # Add effect size annotation with F-statistic and significance
         disc = discriminability.get(metric, {})
         eta = disc.get("eta_squared", 0)
-        effect = disc.get("effect_size", "")
-        ax.set_title(f"{metric.capitalize()}\n$\\eta^2$ = {eta:.3f} ({effect})")
+        f_stat = disc.get("f_statistic", float("nan"))
+        p_val = disc.get("p_value", 1.0)
 
-    plt.tight_layout()
+        effect_label = "large" if eta > 0.14 else "medium" if eta > 0.06 else "small"
+
+        # Significance stars
+        if np.isnan(p_val):
+            sig_str = ""
+        elif p_val < 0.001:
+            sig_str = "***"
+        elif p_val < 0.01:
+            sig_str = "**"
+        elif p_val < 0.05:
+            sig_str = "*"
+        else:
+            sig_str = "ns"
+
+        if not np.isnan(f_stat):
+            annotation = f"η²={eta:.3f} ({effect_label})\nF={f_stat:.1f} {sig_str}"
+        else:
+            annotation = f"η²={eta:.3f} ({effect_label})"
+
+        ax.text(
+            0.02, 0.98, annotation,
+            transform=ax.transAxes, va="top", ha="left", fontsize=9,
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.8),
+        )
+
+    fig.suptitle("Regime Discriminability: Per-Window Metric Distributions", fontsize=14, fontweight="bold")
+    fig.tight_layout()
     return fig
 
 
