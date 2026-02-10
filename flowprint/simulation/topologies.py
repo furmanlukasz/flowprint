@@ -9,7 +9,7 @@ Provides adjacency matrix generators for different coupling topologies:
 """
 
 from __future__ import annotations
-from typing import Dict, Optional
+
 import numpy as np
 
 
@@ -77,7 +77,7 @@ def adjacency_clusters(
     n_clusters: int = 3,
     p_in: float = 1.0,
     p_out: float = 0.01,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> np.ndarray:
     """
     Block-structured adjacency: dense within clusters, sparse between.
@@ -115,7 +115,7 @@ def adjacency_sparse(
     n: int,
     density: float = 0.05,
     directed: bool = False,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> np.ndarray:
     """
     Random sparse adjacency (Erdos-Renyi).
@@ -186,7 +186,7 @@ def laplacian_from_adjacency(A: np.ndarray) -> np.ndarray:
     return np.diag(deg) - A
 
 
-def compute_laplacian_spectrum(L: np.ndarray) -> Dict[str, float]:
+def compute_laplacian_spectrum(L: np.ndarray) -> dict[str, float]:
     """
     Compute spectral properties of the graph Laplacian.
 

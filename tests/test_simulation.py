@@ -102,9 +102,9 @@ class TestSimulationResult:
         result = net.generate(total_duration_s=5.0, coupling_strength=5.0)
 
         # Check all required fields exist
-        assert hasattr(result, 'y')
-        assert hasattr(result, 'z')
-        assert hasattr(result, 'regime_id')
-        assert hasattr(result, 'regime_names')
-        assert hasattr(result, 'switch_times')
-        assert hasattr(result, 't')
+        assert hasattr(result, "y")
+        assert hasattr(result, "z")
+        assert hasattr(result, "regime_id")
+        assert hasattr(result, "regime_names")
+        assert hasattr(result, "switch_times")
+        assert hasattr(result, "t")

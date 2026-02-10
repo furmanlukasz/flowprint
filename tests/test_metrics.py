@@ -83,9 +83,7 @@ class TestDiscriminability:
         grand_mean = np.mean(all_data)
 
         ss_total = np.sum((all_data - grand_mean) ** 2)
-        ss_between = sum(
-            len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups.values()
-        )
+        ss_between = sum(len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups.values())
         eta_sq = ss_between / ss_total
 
         assert 0 <= eta_sq <= 1
@@ -105,9 +103,7 @@ class TestDiscriminability:
         grand_mean = np.mean(all_data)
 
         ss_total = np.sum((all_data - grand_mean) ** 2)
-        ss_between = sum(
-            len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups.values()
-        )
+        ss_between = sum(len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups.values())
         eta_sq = ss_between / (ss_total + 1e-10)
 
         # eta-squared should be small (not exactly 0 due to sampling)
@@ -127,9 +123,7 @@ class TestDiscriminability:
         grand_mean = np.mean(all_data)
 
         ss_total = np.sum((all_data - grand_mean) ** 2)
-        ss_between = sum(
-            len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups.values()
-        )
+        ss_between = sum(len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups.values())
         eta_sq = ss_between / ss_total
 
         # eta-squared should be very high (close to 1)

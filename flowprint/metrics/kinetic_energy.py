@@ -6,7 +6,7 @@ and burst-like dynamics, complementing first-order speed measures.
 """
 
 from __future__ import annotations
-from typing import Dict, Optional
+
 import numpy as np
 from scipy.signal import savgol_filter
 from scipy.stats import kurtosis, skew
@@ -53,7 +53,7 @@ def compute_kinetic_energy(
 
 def compute_kinetic_energy_metrics(
     energy: np.ndarray,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Compute summary statistics for kinetic energy time series.
 
@@ -87,7 +87,7 @@ def compute_energy_landscape(
     positions_2d: np.ndarray,
     bounds: tuple,
     grid_size: int = 20,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Compute spatial distribution of kinetic energy on 2D embedding.
 

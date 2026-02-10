@@ -208,11 +208,11 @@ uv run pytest tests/ --cov=flowprint --cov-report=term-missing
 If you use FlowPrint in your research, please cite:
 
 ```bibtex
-@article{furman2026flowprint,
+@article{furman2026dynamical,
   title={A Dynamical Microscope for Multivariate Oscillatory Signals:
          Validating Regime Recovery on Shared Manifolds},
   author={Furman, Łukasz and Minati, Ludovico and Duch, Włodzisław},
-  journal={NeuroImage},
+  journal={TBA},
   year={2026}
 }
 ```

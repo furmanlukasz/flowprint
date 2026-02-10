@@ -13,19 +13,20 @@ Key features:
 """
 
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
+
 import numpy as np
 
-from flowprint.simulation.topologies import (
-    adjacency_global,
-    adjacency_clusters,
-    adjacency_sparse,
-    adjacency_ring,
-    laplacian_from_adjacency,
-    _normalize_adjacency,
-)
 from flowprint.simulation.noise import generate_colored_noise
+from flowprint.simulation.topologies import (
+    _normalize_adjacency,
+    adjacency_clusters,
+    adjacency_global,
+    adjacency_ring,
+    adjacency_sparse,
+    laplacian_from_adjacency,
+)
 
 
 @dataclass
@@ -35,10 +36,10 @@ class SimulationResult:
     y: np.ndarray  # (n_channels, n_samples) observations
     z: np.ndarray  # (n_oscillators, n_samples) complex oscillator states
     t: np.ndarray  # (n_samples,) time vector in seconds
-    regime_names: List[str]  # regime names in order of appearance
+    regime_names: list[str]  # regime names in order of appearance
     regime_id: np.ndarray  # (n_samples,) integer regime index per sample
-    switch_times: List[float]  # switch times in seconds
-    params: Dict[str, object]  # simulation parameters
+    switch_times: list[float]  # switch times in seconds
+    params: dict[str, object]  # simulation parameters
 
 
 def euler_maruyama_step(
@@ -47,9 +48,9 @@ def euler_maruyama_step(
     omega: np.ndarray,
     dt: float,
     noise_std: float,
-    L: Optional[np.ndarray] = None,
+    L: np.ndarray | None = None,
     coupling_strength: float = 0.0,
-    rng: Optional[np.random.Generator] = None,
+    rng: np.random.Generator | None = None,
 ) -> np.ndarray:
     """
     One Euler-Maruyama step for coupled Stuart-Landau oscillators.
@@ -107,7 +108,7 @@ class CoupledStuartLandauNetwork:
         n_oscillators: int = 30,
         n_channels: int = 30,
         sfreq: float = 250.0,
-        seed: Optional[int] = 0,
+        seed: int | None = 0,
         mixing: str = "random",
         mixing_scale: float = 1.0,
     ) -> None:
@@ -142,11 +143,11 @@ class CoupledStuartLandauNetwork:
             raise ValueError("mixing must be 'random' or 'identity'")
         self.W = mixing_scale * W
 
-        self._topologies: Dict[str, np.ndarray] = {}
-        self._laplacians: Dict[str, np.ndarray] = {}
+        self._topologies: dict[str, np.ndarray] = {}
+        self._laplacians: dict[str, np.ndarray] = {}
 
     def set_topologies(
-        self, topologies: Dict[str, np.ndarray], normalize: str = "mean_degree"
+        self, topologies: dict[str, np.ndarray], normalize: str = "mean_degree"
     ) -> None:
         """
         Register coupling topologies by name.
@@ -168,7 +169,7 @@ class CoupledStuartLandauNetwork:
             self._topologies[name] = A
             self._laplacians[name] = L
 
-    def default_topologies(self, seed: Optional[int] = None) -> None:
+    def default_topologies(self, seed: int | None = None) -> None:
         """
         Create standard set of four named topologies with high contrast.
 
@@ -184,27 +185,25 @@ class CoupledStuartLandauNetwork:
             "cluster": adjacency_clusters(
                 self.n_osc, n_clusters=3, p_in=1.0, p_out=0.01, seed=seed
             ),
-            "sparse": adjacency_sparse(
-                self.n_osc, density=0.03, directed=False, seed=seed + 1
-            ),
+            "sparse": adjacency_sparse(self.n_osc, density=0.03, directed=False, seed=seed + 1),
             "ring": adjacency_ring(self.n_osc, k_neighbors=2, directed=True),
         }
         self.set_topologies(tops, normalize="mean_degree")
 
     @property
-    def topologies(self) -> Dict[str, np.ndarray]:
+    def topologies(self) -> dict[str, np.ndarray]:
         """Get registered topology adjacency matrices."""
         return self._topologies.copy()
 
     @property
-    def laplacians(self) -> Dict[str, np.ndarray]:
+    def laplacians(self) -> dict[str, np.ndarray]:
         """Get registered topology Laplacians."""
         return self._laplacians.copy()
 
     def generate(
         self,
         total_duration_s: float = 160.0,
-        regime_schedule: Optional[List[Tuple[str, float]]] = None,
+        regime_schedule: list[tuple[str, float]] | None = None,
         mu_mean: float = 1.0,
         mu_std: float = 0.2,
         omega_mean_hz: float = 10.0,
@@ -215,7 +214,7 @@ class CoupledStuartLandauNetwork:
         obs_noise_std: float = 0.05,
         obs_noise_color: float = 1.0,
         transition_s: float = 0.3,
-        z0: Optional[np.ndarray] = None,
+        z0: np.ndarray | None = None,
     ) -> SimulationResult:
         """
         Generate time series with scheduled regime switches.
@@ -250,9 +249,9 @@ class CoupledStuartLandauNetwork:
             regime_schedule = [(nm, per) for nm in names]
 
         # Expand schedule to per-sample regime id
-        regime_names: List[str] = []
+        regime_names: list[str] = []
         regime_id = np.zeros(n_steps, dtype=int)
-        switch_times: List[float] = [0.0]
+        switch_times: list[float] = [0.0]
         cursor = 0
         for nm, dur_s in regime_schedule:
             if nm not in self._laplacians:
@@ -276,13 +275,13 @@ class CoupledStuartLandauNetwork:
 
         # Per-oscillator parameters
         mu = self.rng.normal(loc=mu_mean, scale=mu_std, size=self.n_osc)
-        omega_base = 2 * np.pi * self.rng.normal(
-            loc=omega_mean_hz, scale=omega_std_hz, size=self.n_osc
+        omega_base = (
+            2 * np.pi * self.rng.normal(loc=omega_mean_hz, scale=omega_std_hz, size=self.n_osc)
         )
 
         # Frequency gradient for ring topology
-        omega_gradient = 2 * np.pi * np.linspace(
-            -omega_gradient_hz / 2, omega_gradient_hz / 2, self.n_osc
+        omega_gradient = (
+            2 * np.pi * np.linspace(-omega_gradient_hz / 2, omega_gradient_hz / 2, self.n_osc)
         )
 
         omega_per_regime = {}

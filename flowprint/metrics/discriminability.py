@@ -6,7 +6,7 @@ how well metrics discriminate between regimes.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Tuple
+
 import numpy as np
 from scipy import stats
 
@@ -14,7 +14,7 @@ from scipy import stats
 def compute_window_metrics(
     trajectory: np.ndarray,
     window_size: int = 50,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Compute per-window metrics for discriminability analysis.
 
@@ -63,7 +63,7 @@ def compute_window_metrics(
 def compute_discriminability(
     metric_values: np.ndarray,
     labels: np.ndarray,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Compute ANOVA discriminability with eta-squared effect size.
 
@@ -105,9 +105,7 @@ def compute_discriminability(
     grand_mean = np.mean(metric_values)
     ss_total = np.sum((metric_values - grand_mean) ** 2)
 
-    ss_between = sum(
-        len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups
-    )
+    ss_between = sum(len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups)
 
     eta_sq = ss_between / (ss_total + 1e-10)
 
@@ -130,9 +128,9 @@ def compute_discriminability(
 def compute_per_regime_window_metrics(
     trajectory: np.ndarray,
     regime_labels: np.ndarray,
-    regime_names: List[str],
+    regime_names: list[str],
     window_size: int = 50,
-) -> Dict[str, Dict[str, np.ndarray]]:
+) -> dict[str, dict[str, np.ndarray]]:
     """
     Compute per-window metrics WITHIN each regime separately.
 
@@ -153,8 +151,7 @@ def compute_per_regime_window_metrics(
 
     # Initialize per-regime metrics
     regime_metrics = {
-        name: {"speed": [], "variance": [], "tortuosity": []}
-        for name in unique_names
+        name: {"speed": [], "variance": [], "tortuosity": []} for name in unique_names
     }
 
     for name in unique_names:
@@ -202,8 +199,8 @@ def compute_regime_discriminability(
     trajectory: np.ndarray,
     regime_labels: np.ndarray,
     window_size: int = 50,
-    regime_names: List[str] = None,
-) -> Dict[str, Dict[str, float]]:
+    regime_names: list[str] = None,
+) -> dict[str, dict[str, float]]:
     """
     Compute discriminability for multiple metrics across regimes.
 
@@ -248,6 +245,7 @@ def compute_regime_discriminability(
 
         # One-way ANOVA
         from scipy.stats import f_oneway
+
         f_stat, p_val = f_oneway(*groups)
 
         # Eta-squared

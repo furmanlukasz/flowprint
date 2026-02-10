@@ -9,7 +9,7 @@ Computes trajectory-based metrics including:
 """
 
 from __future__ import annotations
-from typing import Dict, Tuple, Optional
+
 import numpy as np
 from scipy.signal import savgol_filter
 
@@ -48,7 +48,7 @@ def compute_velocity(
 def compute_flow_metrics(
     trajectory: np.ndarray,
     smooth_window: int = 5,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Compute flow metrics from a latent trajectory.
 
@@ -91,10 +91,10 @@ def compute_flow_metrics(
 def compute_flow_field(
     positions: np.ndarray,
     velocity: np.ndarray,
-    bounds: Tuple[float, float, float, float],
+    bounds: tuple[float, float, float, float],
     grid_size: int = 15,
     min_samples: int = 3,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Compute spatially binned flow field from positions and velocities.
 
@@ -166,9 +166,9 @@ def compute_flow_field(
 
 
 def compute_field_metrics(
-    flow_field: Dict[str, np.ndarray],
+    flow_field: dict[str, np.ndarray],
     min_samples: int = 3,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Compute summary metrics from a flow field.
 

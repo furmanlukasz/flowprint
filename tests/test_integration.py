@@ -71,8 +71,8 @@ class TestPaperReproducibility:
 
         result = net.generate(
             total_duration_s=160.0,  # Paper: 160s
-            coupling_strength=5.0,   # Paper: kappa = 5.0
-            transition_s=0.3,        # Paper: 0.3s smoothing
+            coupling_strength=5.0,  # Paper: kappa = 5.0
+            transition_s=0.3,  # Paper: 0.3s smoothing
         )
 
         # Check expected dimensions
@@ -105,4 +105,6 @@ class TestPaperReproducibility:
         total_samples = len(result.regime_id)
         for count in regime_counts.values():
             proportion = count / total_samples
-            assert 0.20 < proportion < 0.30, f"Regime proportion {proportion} outside expected range"
+            assert 0.20 < proportion < 0.30, (
+                f"Regime proportion {proportion} outside expected range"
+            )

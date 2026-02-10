@@ -3,7 +3,7 @@ Noise generation utilities for realistic observation models.
 """
 
 from __future__ import annotations
-from typing import Optional
+
 import numpy as np
 
 
@@ -13,7 +13,7 @@ def generate_colored_noise(
     sfreq: float,
     alpha: float = 1.0,
     scale: float = 1.0,
-    seed: Optional[int] = None,
+    seed: int | None = None,
 ) -> np.ndarray:
     """
     Generate 1/f^alpha colored noise.

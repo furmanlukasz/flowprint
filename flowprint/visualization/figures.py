@@ -10,9 +10,9 @@ Reproduces all figures from the paper:
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.gridspec import GridSpec
 from scipy.signal import hilbert
 
@@ -20,12 +20,12 @@ from scipy.signal import hilbert
 def plot_electrode_timeseries(
     observations: np.ndarray,
     time: np.ndarray,
-    switch_times: List[float],
+    switch_times: list[float],
     sfreq: float,
-    channels: List[int] = [0, 5, 10, 20, 28],
-    time_window: Tuple[float, float] = (0.0, 60.0),
+    channels: list[int] = [0, 5, 10, 20, 28],
+    time_window: tuple[float, float] = (0.0, 60.0),
     nfft: int = 2048,
-    figsize: Tuple[float, float] = (12, 9),
+    figsize: tuple[float, float] = (12, 9),
 ) -> plt.Figure:
     """
     Multi-panel visualization of raw observations.
@@ -102,13 +102,13 @@ def plot_electrode_timeseries(
 def plot_main_analysis(
     embedded: np.ndarray,
     regime_labels: np.ndarray,
-    regime_names: List[str],
-    switch_times: List[float],
+    regime_names: list[str],
+    switch_times: list[float],
     total_duration: float,
-    flow_field: Dict[str, np.ndarray],
-    flow_metrics: Dict[str, Dict[str, float]],
-    regime_colors: Optional[Dict[str, str]] = None,
-    figsize: Tuple[float, float] = (16, 12),
+    flow_field: dict[str, np.ndarray],
+    flow_metrics: dict[str, dict[str, float]],
+    regime_colors: dict[str, str] | None = None,
+    figsize: tuple[float, float] = (16, 12),
 ) -> plt.Figure:
     """
     Main 4-panel analysis figure.
@@ -190,14 +190,11 @@ def plot_main_analysis(
     ymin, ymax = embedded[:, 1].min(), embedded[:, 1].max()
 
     H, xedges, yedges = np.histogram2d(
-        embedded[:, 0], embedded[:, 1], bins=50,
-        range=[[xmin, xmax], [ymin, ymax]]
+        embedded[:, 0], embedded[:, 1], bins=50, range=[[xmin, xmax], [ymin, ymax]]
     )
 
     ax_c.imshow(
-        H.T, origin="lower",
-        extent=[xmin, xmax, ymin, ymax],
-        cmap="Blues", alpha=0.7, aspect="auto"
+        H.T, origin="lower", extent=[xmin, xmax, ymin, ymax], cmap="Blues", alpha=0.7, aspect="auto"
     )
 
     # Overlay flow field
@@ -213,9 +210,17 @@ def plot_main_analysis(
         norm_fx = np.where(mag > 0, flow_x[mask] / mag, 0)
         norm_fy = np.where(mag > 0, flow_y[mask] / mag, 0)
         ax_c.quiver(
-            X[mask], Y[mask], norm_fx, norm_fy, mag,
-            cmap="inferno", alpha=0.85,
-            scale=25, width=0.004, headwidth=4, headlength=5,
+            X[mask],
+            Y[mask],
+            norm_fx,
+            norm_fy,
+            mag,
+            cmap="inferno",
+            alpha=0.85,
+            scale=25,
+            width=0.004,
+            headwidth=4,
+            headlength=5,
         )
     ax_c.set_xlabel("Dim 1")
     ax_c.set_ylabel("Dim 2")
@@ -244,9 +249,9 @@ def plot_main_analysis(
 
 
 def plot_flow_fields(
-    regime_data: Dict[str, Dict],
-    regime_colors: Optional[Dict[str, str]] = None,
-    figsize: Tuple[float, float] = (16, 4),
+    regime_data: dict[str, dict],
+    regime_colors: dict[str, str] | None = None,
+    figsize: tuple[float, float] = (16, 4),
 ) -> plt.Figure:
     """
     Regime-specific flow field visualization.
@@ -288,13 +293,15 @@ def plot_flow_fields(
         ymin, ymax = embedded[:, 1].min(), embedded[:, 1].max()
 
         H, _, _ = np.histogram2d(
-            embedded[:, 0], embedded[:, 1], bins=30,
-            range=[[xmin, xmax], [ymin, ymax]]
+            embedded[:, 0], embedded[:, 1], bins=30, range=[[xmin, xmax], [ymin, ymax]]
         )
         ax.imshow(
-            H.T, origin="lower",
+            H.T,
+            origin="lower",
             extent=[xmin, xmax, ymin, ymax],
-            cmap="Blues", alpha=0.6, aspect="auto"
+            cmap="Blues",
+            alpha=0.6,
+            aspect="auto",
         )
 
         # Flow field
@@ -304,8 +311,14 @@ def plot_flow_fields(
             norm_fx = np.where(mag > 0, ff["flow_x"][mask] / mag, 0)
             norm_fy = np.where(mag > 0, ff["flow_y"][mask] / mag, 0)
             ax.quiver(
-                ff["X"][mask], ff["Y"][mask], norm_fx, norm_fy, mag,
-                cmap="inferno", alpha=0.8, scale=30,
+                ff["X"][mask],
+                ff["Y"][mask],
+                norm_fx,
+                norm_fy,
+                mag,
+                cmap="inferno",
+                alpha=0.8,
+                scale=30,
             )
 
         # Annotations
@@ -320,11 +333,11 @@ def plot_flow_fields(
 
 
 def plot_discriminability_per_regime(
-    regime_metrics: Dict[str, Dict[str, np.ndarray]],
-    regime_names: List[str],
-    discriminability: Dict[str, Dict[str, float]],
-    regime_colors: Optional[Dict[str, str]] = None,
-    figsize: Tuple[float, float] = (14, 5),
+    regime_metrics: dict[str, dict[str, np.ndarray]],
+    regime_names: list[str],
+    discriminability: dict[str, dict[str, float]],
+    regime_colors: dict[str, str] | None = None,
+    figsize: tuple[float, float] = (14, 5),
 ) -> plt.Figure:
     """
     Violin plots of per-window metric distributions by regime.
@@ -423,23 +436,30 @@ def plot_discriminability_per_regime(
             annotation = f"η²={eta:.3f} ({effect_label})"
 
         ax.text(
-            0.02, 0.98, annotation,
-            transform=ax.transAxes, va="top", ha="left", fontsize=9,
+            0.02,
+            0.98,
+            annotation,
+            transform=ax.transAxes,
+            va="top",
+            ha="left",
+            fontsize=9,
             bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.8),
         )
 
-    fig.suptitle("Regime Discriminability: Per-Window Metric Distributions", fontsize=14, fontweight="bold")
+    fig.suptitle(
+        "Regime Discriminability: Per-Window Metric Distributions", fontsize=14, fontweight="bold"
+    )
     fig.tight_layout()
     return fig
 
 
 def plot_discriminability(
-    window_metrics: Dict[str, np.ndarray],
+    window_metrics: dict[str, np.ndarray],
     window_labels: np.ndarray,
-    regime_names: List[str],
-    discriminability: Dict[str, Dict[str, float]],
-    regime_colors: Optional[Dict[str, str]] = None,
-    figsize: Tuple[float, float] = (14, 5),
+    regime_names: list[str],
+    discriminability: dict[str, dict[str, float]],
+    regime_colors: dict[str, str] | None = None,
+    figsize: tuple[float, float] = (14, 5),
 ) -> plt.Figure:
     """
     Violin plots of per-window metric distributions by regime.
@@ -468,7 +488,7 @@ def plot_discriminability(
 
     # Map labels (regime indices) to regime names
     # Build mapping: regime_id -> regime_name
-    label_to_name = {i: regime_names[i] for i in range(len(regime_names))}
+    {i: regime_names[i] for i in range(len(regime_names))}
 
     metric_titles = {
         "speed": "Speed (latent units/step)",
@@ -552,12 +572,19 @@ def plot_discriminability(
             annotation = f"η²={eta:.3f} ({effect_label})"
 
         ax.text(
-            0.02, 0.98, annotation,
-            transform=ax.transAxes, va="top", ha="left", fontsize=9,
+            0.02,
+            0.98,
+            annotation,
+            transform=ax.transAxes,
+            va="top",
+            ha="left",
+            fontsize=9,
             bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.8),
         )
 
-    fig.suptitle("Regime Discriminability: Per-Window Metric Distributions", fontsize=14, fontweight="bold")
+    fig.suptitle(
+        "Regime Discriminability: Per-Window Metric Distributions", fontsize=14, fontweight="bold"
+    )
     fig.tight_layout()
     return fig
 
@@ -566,11 +593,11 @@ def plot_kinetic_energy(
     energy: np.ndarray,
     time: np.ndarray,
     regime_labels: np.ndarray,
-    regime_names: List[str],
-    energy_landscape: Dict[str, np.ndarray],
-    per_regime_metrics: Dict[str, Dict[str, float]],
-    regime_colors: Optional[Dict[str, str]] = None,
-    figsize: Tuple[float, float] = (16, 10),
+    regime_names: list[str],
+    energy_landscape: dict[str, np.ndarray],
+    per_regime_metrics: dict[str, dict[str, float]],
+    regime_colors: dict[str, str] | None = None,
+    figsize: tuple[float, float] = (16, 10),
 ) -> plt.Figure:
     """
     Kinetic energy analysis figure (4 panels).
@@ -622,6 +649,7 @@ def plot_kinetic_energy(
 
     # Smoothed trend
     from scipy.ndimage import uniform_filter1d
+
     smoothed = uniform_filter1d(energy, size=500)
     ax_a.plot(time, smoothed, "k-", lw=2, label="Smoothed")
 
