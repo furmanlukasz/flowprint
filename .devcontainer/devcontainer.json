@@ -2,9 +2,9 @@
   "name": "FlowPrint Dev Container",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": "."
+    "context": ".."
   },
-  "postCreateCommand": ". $HOME/.local/bin/env && uv sync --all-extras",
+  "postCreateCommand": "uv sync --all-extras",
   "customizations": {
     "vscode": {
       "extensions": [

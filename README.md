@@ -89,13 +89,28 @@ pip install -e .
 pip install -e ".[dev]"
 ```
 
-### Using GitHub Codespaces
+### Using GitHub Codespaces (Easiest)
 
 Click the button below to open the project in a pre-configured development environment:
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukasfurman/flowprint)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/furmanlukasz/flowprint)
 
-The Codespace will automatically install all dependencies using UV.
+The Codespace will automatically:
+- Set up Python 3.11 environment
+- Install UV package manager
+- Install all dependencies via `uv sync --all-extras`
+
+Once the Codespace is ready, you can immediately run:
+
+```bash
+# Reproduce all figures from the paper
+uv run python examples/reproduce_figures.py --output-dir output/
+
+# Or run tests
+uv run pytest tests/ -v
+```
+
+All dependencies (NumPy, SciPy, UMAP, etc.) are pre-installed and ready to use.
 
 ## Quick Start
 
