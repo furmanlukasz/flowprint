@@ -1,9 +1,9 @@
 # FlowPrint
 
-[![CI](https://github.com/lukasfurman/flowprint/actions/workflows/ci.yml/badge.svg)](https://github.com/lukasfurman/flowprint/actions/workflows/ci.yml)
+[![CI](https://github.com/furmanlukasz/flowprint/actions/workflows/ci.yml/badge.svg)](https://github.com/furmanlukasz/flowprint/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukasfurman/flowprint)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/furmanlukasz/flowprint)
 
 **Flow-based fingerprints of dynamical regimes on shared manifolds.**
 
@@ -59,7 +59,7 @@ Then install FlowPrint:
 
 ```bash
 # Clone and install
-git clone https://github.com/lukasfurman/flowprint.git
+git clone https://github.com/furmanlukasz/flowprint.git
 cd flowprint
 uv sync
 
@@ -81,7 +81,7 @@ uv sync --all-extras
 
 ```bash
 # Clone and install
-git clone https://github.com/lukasfurman/flowprint.git
+git clone https://github.com/furmanlukasz/flowprint.git
 cd flowprint
 pip install -e .
 
