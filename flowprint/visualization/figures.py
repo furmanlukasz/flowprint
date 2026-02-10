@@ -319,6 +319,120 @@ def plot_flow_fields(
     return fig
 
 
+def plot_discriminability_per_regime(
+    regime_metrics: Dict[str, Dict[str, np.ndarray]],
+    regime_names: List[str],
+    discriminability: Dict[str, Dict[str, float]],
+    regime_colors: Optional[Dict[str, str]] = None,
+    figsize: Tuple[float, float] = (14, 5),
+) -> plt.Figure:
+    """
+    Violin plots of per-window metric distributions by regime.
+
+    Uses pre-computed per-regime metrics (correct approach that avoids
+    boundary artifacts from windows spanning multiple regimes).
+
+    Args:
+        regime_metrics: Dict mapping regime_name -> {metric: array of values}
+        regime_names: List of unique regime names
+        discriminability: Dict mapping metric -> discriminability results
+        regime_colors: Optional color mapping
+        figsize: Figure size
+
+    Returns:
+        matplotlib Figure
+    """
+    if regime_colors is None:
+        regime_colors = {
+            "global": "#1f77b4",
+            "cluster": "#ff7f0e",
+            "sparse": "#2ca02c",
+            "ring": "#d62728",
+        }
+
+    metric_titles = {
+        "speed": "Speed (latent units/step)",
+        "variance": "Explored Variance",
+        "tortuosity": "Path Tortuosity",
+    }
+
+    fig, axes = plt.subplots(1, 3, figsize=figsize)
+
+    for ax, metric in zip(axes, ["speed", "variance", "tortuosity"]):
+        # Collect data per regime
+        data_for_plot = []
+        positions = []
+        colors_for_plot = []
+
+        for i, name in enumerate(regime_names):
+            if name in regime_metrics and metric in regime_metrics[name]:
+                vals = regime_metrics[name][metric]
+                if len(vals) > 0:
+                    data_for_plot.append(vals)
+                    positions.append(i)
+                    colors_for_plot.append(regime_colors.get(name, "#888888"))
+
+        if data_for_plot:
+            # Violin plot with means and medians
+            parts = ax.violinplot(
+                data_for_plot,
+                positions=positions,
+                showmeans=True,
+                showmedians=True,
+            )
+
+            # Color the violins
+            for i, pc in enumerate(parts["bodies"]):
+                pc.set_facecolor(colors_for_plot[i])
+                pc.set_alpha(0.7)
+
+            # Style the lines
+            for partname in ["cmeans", "cmedians", "cbars", "cmins", "cmaxes"]:
+                if partname in parts:
+                    parts[partname].set_color("black")
+                    parts[partname].set_linewidth(1)
+
+        ax.set_xticks(range(len(regime_names)))
+        ax.set_xticklabels(regime_names)
+        ax.set_title(metric_titles.get(metric, metric.capitalize()), fontweight="bold")
+        ax.set_ylabel("Value")
+
+        # Add effect size annotation
+        disc = discriminability.get(metric, {})
+        eta = disc.get("eta_squared", 0)
+        f_stat = disc.get("f_statistic", float("nan"))
+        p_val = disc.get("p_value", 1.0)
+
+        effect_label = "large" if eta > 0.14 else "medium" if eta > 0.06 else "small"
+
+        # Significance stars
+        if np.isnan(p_val):
+            sig_str = ""
+        elif p_val < 0.001:
+            sig_str = "***"
+        elif p_val < 0.01:
+            sig_str = "**"
+        elif p_val < 0.05:
+            sig_str = "*"
+        else:
+            sig_str = "ns"
+
+        if not np.isnan(f_stat):
+            annotation = f"η²={eta:.3f} ({effect_label})\nF={f_stat:.1f} {sig_str}"
+        else:
+            annotation = f"η²={eta:.3f} ({effect_label})"
+
+        ax.text(
+            0.02, 0.98, annotation,
+            transform=ax.transAxes, va="top", ha="left", fontsize=9,
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.8),
+        )
+
+    fig.suptitle("Regime Discriminability: Per-Window Metric Distributions", fontsize=14, fontweight="bold")
+    fig.tight_layout()
+    return fig
+
+
 def plot_discriminability(
     window_metrics: Dict[str, np.ndarray],
     window_labels: np.ndarray,

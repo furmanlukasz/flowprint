@@ -40,22 +40,22 @@ from flowprint.metrics import (
     compute_kinetic_energy_metrics,
     compute_energy_landscape,
     compute_regime_discriminability,
-    compute_window_metrics,
 )
+from flowprint.metrics.discriminability import compute_per_regime_window_metrics
 from flowprint.visualization import (
     plot_electrode_timeseries,
     plot_main_analysis,
     plot_flow_fields,
-    plot_discriminability,
     plot_kinetic_energy,
 )
+from flowprint.visualization.figures import plot_discriminability_per_regime
 
 
 def extract_phase_representation(
     observations: np.ndarray,
     sfreq: float,
-    lowcut: float = 2.0,
-    highcut: float = 48.0,
+    lowcut: float = 1.0,
+    highcut: float = 30.0,
 ) -> np.ndarray:
     """
     Extract circular phase-amplitude representation from observations.
@@ -271,10 +271,14 @@ def main():
     parser.add_argument("--output-dir", type=str, default="figures",
                         help="Output directory for figures")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--duration", type=float, default=160.0,
-                        help="Simulation duration in seconds")
+    parser.add_argument("--duration", type=float, default=180.0,
+                        help="Simulation duration in seconds (default: 180s for 4 full cycles)")
     parser.add_argument("--n-epochs", type=int, default=50,
                         help="Autoencoder training epochs")
+    parser.add_argument("--n-cycles", type=int, default=4,
+                        help="Number of regime cycles (default: 4)")
+    parser.add_argument("--regime-duration", type=float, default=10.0,
+                        help="Duration per regime in seconds (default: 10s)")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -297,13 +301,16 @@ def main():
     )
     net.default_topologies(seed=args.seed)
 
-    # Regime schedule: 10s per regime, 4 cycles
+    # Regime schedule: default 10s per regime, 4 cycles = 160s of regime data
     regime_order = ["global", "cluster", "sparse", "ring"]
-    n_cycles = int(args.duration / (4 * 10))
-    schedule = [(name, 10.0) for _ in range(n_cycles) for name in regime_order]
+    schedule = [(name, args.regime_duration) for _ in range(args.n_cycles) for name in regime_order]
+
+    # Calculate actual duration from schedule
+    scheduled_duration = args.n_cycles * 4 * args.regime_duration
+    print(f"  Schedule: {args.n_cycles} cycles × 4 regimes × {args.regime_duration}s = {scheduled_duration}s")
 
     result = net.generate(
-        total_duration_s=args.duration,
+        total_duration_s=scheduled_duration,
         regime_schedule=schedule,
         coupling_strength=5.0,
         noise_std=0.1,
@@ -353,10 +360,25 @@ def main():
     # Standardize latent
     scaler = StandardScaler()
     latent_scaled = scaler.fit_transform(latent)
+    print(f"  Latent variance after scaling: {latent_scaled.var(axis=0).mean():.4f}")
 
-    # UMAP embedding
-    embedder = umap.UMAP(n_components=2, random_state=args.seed, n_jobs=1)
-    embedded = embedder.fit_transform(latent_scaled)
+    # Clip outliers (matches original pipeline)
+    p99 = np.percentile(np.abs(latent_scaled), 99)
+    clip_threshold = max(3.0, p99)
+    latent_clipped = np.clip(latent_scaled, -clip_threshold, clip_threshold)
+    n_clipped = (np.abs(latent_scaled) > clip_threshold).sum()
+    if n_clipped > 0:
+        print(f"  Clipped {n_clipped} extreme values (>{clip_threshold:.1f} std)")
+
+    # UMAP embedding (on clipped latent) - match original paper settings
+    embedder = umap.UMAP(
+        n_components=2,
+        n_neighbors=30,
+        min_dist=0.1,
+        random_state=args.seed,
+        n_jobs=1
+    )
+    embedded = embedder.fit_transform(latent_clipped)
     print(f"  Embedded shape: {embedded.shape}")
 
     # Align regime labels with latent (downsampled)
@@ -374,7 +396,7 @@ def main():
     for name in unique_names:
         matching_ids = [i for i, n in enumerate(result.regime_names) if n == name]
         mask = np.isin(labels_aligned, matching_ids)
-        regime_latent = latent_scaled[mask]
+        regime_latent = latent_clipped[mask]
         regime_embedded = embedded[mask]
 
         # Flow metrics on full latent
@@ -400,17 +422,32 @@ def main():
 
         print(f"  {name}: speed={metrics['speed']:.4f}, var={metrics['explored_variance']:.2f}, n={mask.sum()}")
 
-    # Discriminability
+    # Discriminability (using per-regime window computation)
     print("\n[Step 6] Computing discriminability...")
 
-    # Window size based on actual latent length
-    window_size = max(10, len(latent_scaled) // 50)  # ~50 windows
-    disc = compute_regime_discriminability(latent_scaled, labels_aligned, window_size=window_size)
+    # Window size: ~50 windows per regime
+    n_samples_per_regime = len(latent_clipped) // len(unique_names)
+    window_size = max(10, n_samples_per_regime // 50)
+    print(f"  Window size: {window_size} samples (~{len(latent_clipped) // window_size} total windows)")
+
+    # Compute discriminability with proper per-regime windowing
+    disc = compute_regime_discriminability(
+        latent_clipped, labels_aligned,
+        window_size=window_size,
+        regime_names=result.regime_names
+    )
+
+    # Also compute per-regime window metrics for violin plots
+    regime_window_metrics = compute_per_regime_window_metrics(
+        latent_clipped, labels_aligned, result.regime_names, window_size
+    )
+
     for metric, results in disc.items():
         eta = results['eta_squared']
         f_stat = results.get('f_statistic', float('nan'))
+        n_win = results.get('n_windows', [])
         if not np.isnan(f_stat):
-            print(f"  {metric}: F={f_stat:.1f}, η²={eta:.3f} ({results['effect_size']})")
+            print(f"  {metric}: F={f_stat:.1f}, η²={eta:.3f} ({results['effect_size']}) [n={n_win}]")
         else:
             print(f"  {metric}: η²={eta:.3f} ({results['effect_size']})")
 
@@ -449,21 +486,16 @@ def main():
     fig3.savefig(output_dir / "fig_flow_fields.pdf", dpi=300, bbox_inches="tight")
     print("  Saved: fig_flow_fields")
 
-    # Figure 4: Discriminability
-    window_metrics = compute_window_metrics(latent_scaled, window_size=window_size)
-    n_windows = len(window_metrics["speed"])
-    window_labels = np.array([
-        labels_aligned[min(i * window_size, len(labels_aligned) - 1)]
-        for i in range(n_windows)
-    ])
-
-    fig4 = plot_discriminability(window_metrics, window_labels, result.regime_names, disc)
+    # Figure 4: Discriminability (using per-regime window metrics)
+    fig4 = plot_discriminability_per_regime(
+        regime_window_metrics, unique_names, disc
+    )
     fig4.savefig(output_dir / "fig_discriminability.png", dpi=150, bbox_inches="tight")
     fig4.savefig(output_dir / "fig_discriminability.pdf", dpi=300, bbox_inches="tight")
     print("  Saved: fig_discriminability")
 
     # Figure 5: Kinetic energy
-    energy = compute_kinetic_energy(latent_scaled, trim_edges=True)
+    energy = compute_kinetic_energy(latent_clipped, trim_edges=True)
     trim = 10
     time_trimmed = np.linspace(0, args.duration, len(energy))
     labels_trimmed = labels_aligned[trim:-trim][:len(energy)]

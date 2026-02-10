@@ -1,6 +1,6 @@
 {
   "simulation": {
-    "duration_s": 160.0,
+    "duration_s": 180.0,
     "n_channels": 30,
     "n_oscillators": 30,
     "sfreq": 250.0,
@@ -18,48 +18,66 @@
   "compression_ratio": 4.0,
   "flow_metrics": {
     "global": {
-      "speed": 1.5647531747817993,
-      "speed_cv": 4.826777935028076,
-      "tortuosity": 17.969707489013672,
-      "explored_variance": 98.3118896484375
+      "speed": 1.3852444887161255,
+      "speed_cv": 0.3847569227218628,
+      "tortuosity": 485.3613586425781,
+      "explored_variance": 14.944963455200195
     },
     "cluster": {
-      "speed": 1.3683068752288818,
-      "speed_cv": 0.28614020347595215,
-      "tortuosity": 3098.86572265625,
-      "explored_variance": 13.026449203491211
+      "speed": 1.4851069450378418,
+      "speed_cv": 0.3591240644454956,
+      "tortuosity": 1723.2786865234375,
+      "explored_variance": 16.144975662231445
     },
     "sparse": {
-      "speed": 0.889370322227478,
-      "speed_cv": 0.3586841821670532,
-      "tortuosity": 1476.98876953125,
-      "explored_variance": 6.2031168937683105
+      "speed": 1.0309165716171265,
+      "speed_cv": 0.3958513140678406,
+      "tortuosity": 953.0584106445312,
+      "explored_variance": 7.7479248046875
     },
     "ring": {
-      "speed": 0.9666814208030701,
-      "speed_cv": 0.5136749148368835,
-      "tortuosity": 180.91688537597656,
-      "explored_variance": 5.174914360046387
+      "speed": 1.367355465888977,
+      "speed_cv": 0.40014398097991943,
+      "tortuosity": 962.6436157226562,
+      "explored_variance": 10.104011535644531
     }
   },
   "discriminability": {
     "speed": {
-      "f_statistic": 9.678911209106445,
-      "p_value": 2.817749589212326e-08,
-      "eta_squared": 0.8102506995201111,
-      "effect_size": "large"
+      "f_statistic": 105.30245869420415,
+      "p_value": 1.2206807544377832e-40,
+      "eta_squared": 0.6171182343569024,
+      "effect_size": "large",
+      "n_windows": [
+        50,
+        50,
+        50,
+        50
+      ]
     },
     "variance": {
-      "f_statistic": 0.7206399440765381,
-      "p_value": 0.7471870183944702,
-      "eta_squared": 0.2412339746952057,
-      "effect_size": "large"
+      "f_statistic": 75.20506134500575,
+      "p_value": 2.0660779280683233e-32,
+      "eta_squared": 0.535121107062106,
+      "effect_size": "large",
+      "n_windows": [
+        50,
+        50,
+        50,
+        50
+      ]
     },
     "tortuosity": {
-      "f_statistic": 1.8210034370422363,
-      "p_value": 0.07297459244728088,
-      "eta_squared": 0.4454869031906128,
-      "effect_size": "large"
+      "f_statistic": 1.4874175449966809,
+      "p_value": 0.21922304152428945,
+      "eta_squared": 0.022259814884526358,
+      "effect_size": "small",
+      "n_windows": [
+        50,
+        50,
+        50,
+        50
+      ]
     }
   }
 }
