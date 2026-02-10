@@ -1,5 +1,10 @@
 # FlowPrint
 
+[![CI](https://github.com/lukasfurman/flowprint/actions/workflows/ci.yml/badge.svg)](https://github.com/lukasfurman/flowprint/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukasfurman/flowprint)
+
 **Flow-based fingerprints of dynamical regimes on shared manifolds.**
 
 FlowPrint is a framework for characterizing dynamical regimes in multivariate time series using latent trajectories, flow fields, and geometric fingerprints—rather than discrete state labels.
@@ -13,6 +18,31 @@ Key features:
 - **Flow field estimation** on learned latent representations
 - **Trajectory-based metrics**: speed, tortuosity, explored variance, kinetic energy
 - **Discriminability analysis** using ANOVA with effect sizes (η²)
+
+## Example Figures
+
+<table>
+<tr>
+<td width="50%">
+<img src="figures/fig_analysis_main.png" alt="Main Analysis" width="100%">
+<p align="center"><em>UMAP embedding, flow fields, and metrics by regime</em></p>
+</td>
+<td width="50%">
+<img src="figures/fig_discriminability.png" alt="Discriminability" width="100%">
+<p align="center"><em>Regime discriminability with η² effect sizes</em></p>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="figures/fig_flow_fields.png" alt="Flow Fields" width="100%">
+<p align="center"><em>Regime-specific flow field patterns</em></p>
+</td>
+<td width="50%">
+<img src="figures/fig_kinetic_energy.png" alt="Kinetic Energy" width="100%">
+<p align="center"><em>Latent kinetic energy as dynamical activity proxy</em></p>
+</td>
+</tr>
+</table>
 
 ## Installation
 
@@ -29,7 +59,7 @@ Then install FlowPrint:
 
 ```bash
 # Clone and install
-git clone https://github.com/username/flowprint.git
+git clone https://github.com/lukasfurman/flowprint.git
 cd flowprint
 uv sync
 
@@ -51,7 +81,7 @@ uv sync --all-extras
 
 ```bash
 # Clone and install
-git clone https://github.com/username/flowprint.git
+git clone https://github.com/lukasfurman/flowprint.git
 cd flowprint
 pip install -e .
 
@@ -59,11 +89,19 @@ pip install -e .
 pip install -e ".[dev]"
 ```
 
+### Using GitHub Codespaces
+
+Click the button below to open the project in a pre-configured development environment:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/lukasfurman/flowprint)
+
+The Codespace will automatically install all dependencies using UV.
+
 ## Quick Start
 
 ```python
 from flowprint import CoupledStuartLandauNetwork
-from flowprint.metrics import compute_flow_metrics, compute_discriminability
+from flowprint.metrics import compute_flow_metrics
 from flowprint.visualization import plot_electrode_timeseries
 
 # Generate simulation with topology-switching
@@ -151,6 +189,19 @@ Uses one-way ANOVA with eta-squared (η²) effect size:
 - η² > 0.14: Large effect
 - 0.06 < η² < 0.14: Medium effect
 - η² < 0.06: Small effect
+
+## Running Tests
+
+```bash
+# Run all tests
+uv run pytest tests/ -v
+
+# Run fast tests only
+uv run pytest tests/test_simulation.py tests/test_metrics.py -v
+
+# Run with coverage
+uv run pytest tests/ --cov=flowprint --cov-report=term-missing
+```
 
 ## Citation
 

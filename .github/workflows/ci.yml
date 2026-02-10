@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Check imports work
+        run: |
+          uv run python -c "from flowprint import CoupledStuartLandauNetwork"
+          uv run python -c "from flowprint.metrics import compute_flow_metrics"
+          uv run python -c "from flowprint.simulation import CoupledStuartLandauNetwork"
+          uv run python -c "import torch; import numpy; import scipy; import umap"
+
+      - name: Run fast tests
+        run: |
+          uv run python -m pytest tests/test_simulation.py tests/test_metrics.py -v --tb=short
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ruff check
+        run: uv run ruff check flowprint/ tests/
+
+      - name: Run ruff format check
+        run: uv run ruff format --check flowprint/ tests/

@@ -97,9 +97,9 @@ dmypy.json
 # macOS
 .DS_Store
 
-# Generated figures
-figures/*.png
-figures/*.pdf
+# Generated figures (keep example figures for README)
+# figures/*.png
+# figures/*.pdf
 
 # Model checkpoints
 *.pt

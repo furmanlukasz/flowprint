@@ -1,7 +1,6 @@
 """Tests for flow metrics and discriminability computation."""
 
 import numpy as np
-import pytest
 
 from flowprint.metrics.flow_metrics import compute_flow_metrics, compute_velocity
 

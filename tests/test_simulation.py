@@ -1,7 +1,6 @@
 """Tests for the coupled Stuart-Landau oscillator simulation."""
 
 import numpy as np
-import pytest
 
 from flowprint.simulation.coupled_oscillators import (
     CoupledStuartLandauNetwork,
