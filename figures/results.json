@@ -1,0 +1,60 @@
+{
+  "simulation": {
+    "duration_s": 160.0,
+    "n_channels": 30,
+    "n_oscillators": 30,
+    "sfreq": 250.0,
+    "regimes": [
+      "global",
+      "cluster",
+      "sparse",
+      "ring"
+    ]
+  },
+  "flow_metrics": {
+    "global": {
+      "speed": 2.5793282985687256,
+      "speed_cv": 0.8400334715843201,
+      "tortuosity": 1.492488980293274,
+      "explored_variance": 21.390161514282227
+    },
+    "cluster": {
+      "speed": 2.3568313121795654,
+      "speed_cv": 0.6297909021377563,
+      "tortuosity": 2.226748466491699,
+      "explored_variance": 18.29994010925293
+    },
+    "sparse": {
+      "speed": 3.768381118774414,
+      "speed_cv": 0.4912082552909851,
+      "tortuosity": 6.122868537902832,
+      "explored_variance": 49.094356536865234
+    },
+    "ring": {
+      "speed": 1.486557126045227,
+      "speed_cv": 0.4588426649570465,
+      "tortuosity": 5.949561595916748,
+      "explored_variance": 20.93526268005371
+    }
+  },
+  "discriminability": {
+    "speed": {
+      "f_statistic": NaN,
+      "p_value": NaN,
+      "eta_squared": 1.0,
+      "effect_size": "large"
+    },
+    "variance": {
+      "f_statistic": NaN,
+      "p_value": NaN,
+      "eta_squared": 1.0,
+      "effect_size": "large"
+    },
+    "tortuosity": {
+      "f_statistic": NaN,
+      "p_value": NaN,
+      "eta_squared": 0.9999998807907104,
+      "effect_size": "large"
+    }
+  }
+}

@@ -11,6 +11,9 @@ This script generates:
 - fig_flow_fields.png/pdf
 - fig_discriminability.png/pdf
 - fig_kinetic_energy.png/pdf
+
+IMPORTANT: Uses sliding-window convolutional encoder for proper temporal
+resolution (~2800 latent points from 160s, not 32).
 """
 
 from __future__ import annotations
@@ -19,8 +22,13 @@ import argparse
 from pathlib import Path
 import json
 import numpy as np
+from scipy.signal import butter, filtfilt, hilbert
 from sklearn.preprocessing import StandardScaler
 import umap
+
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
 
 # FlowPrint imports
 from flowprint.simulation import CoupledStuartLandauNetwork
@@ -58,10 +66,8 @@ def extract_phase_representation(
         lowcut, highcut: Bandpass filter cutoffs
 
     Returns:
-        (3 * n_channels, n_samples) phase representation
+        (3 * n_channels, n_samples) phase representation [cos, sin, log_amp]
     """
-    from scipy.signal import butter, filtfilt, hilbert
-
     n_channels, n_samples = observations.shape
 
     # Bandpass filter
@@ -87,59 +93,139 @@ def extract_phase_representation(
     return representation
 
 
-def create_simple_autoencoder(input_dim: int, latent_dim: int = 32):
-    """Create a simple convolutional autoencoder."""
-    import torch
-    import torch.nn as nn
+# =============================================================================
+# CONVOLUTIONAL AUTOENCODER (sliding window, preserves temporal resolution)
+# =============================================================================
 
-    class ConvAutoencoder(nn.Module):
-        def __init__(self, in_features, latent_dim):
-            super().__init__()
-            self.encoder = nn.Sequential(
-                nn.Linear(in_features, 256),
-                nn.ReLU(),
-                nn.Linear(256, 128),
-                nn.ReLU(),
-                nn.Linear(128, latent_dim),
+class ConvAutoencoder(nn.Module):
+    """
+    Convolutional autoencoder that preserves temporal resolution.
+
+    Unlike chunk-flatten-MLP approaches, this uses strided convolutions
+    that compress time by ~4x, giving ~2800 latent points from 160s.
+
+    Input: (batch, n_features, time) where n_features = 3 * n_channels
+    Output: reconstruction, latent of shape (batch, time', hidden_size)
+    """
+
+    def __init__(self, n_channels: int, hidden_size: int = 32, phase_channels: int = 3):
+        super().__init__()
+        input_size = n_channels * phase_channels
+
+        # Encoder: Conv1d with stride=2 for 4x compression
+        self.encoder_conv = nn.Sequential(
+            nn.Conv1d(input_size, 64, kernel_size=5, stride=2, padding=2),
+            nn.ReLU(),
+            nn.Conv1d(64, 128, kernel_size=5, stride=2, padding=2),
+            nn.ReLU(),
+        )
+
+        # LSTM for sequential encoding
+        self.encoder_lstm = nn.LSTM(
+            input_size=128,
+            hidden_size=hidden_size,
+            num_layers=1,
+            batch_first=True,
+            bidirectional=False,
+        )
+
+        # Decoder
+        self.decoder_lstm = nn.LSTM(
+            input_size=hidden_size,
+            hidden_size=128,
+            num_layers=1,
+            batch_first=True,
+            bidirectional=False,
+        )
+
+        self.decoder_conv = nn.Sequential(
+            nn.ConvTranspose1d(128, 64, kernel_size=5, stride=2, padding=2, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose1d(64, input_size, kernel_size=5, stride=2, padding=2, output_padding=1),
+        )
+
+    def forward(self, x: torch.Tensor) -> tuple:
+        """Forward pass: returns (reconstruction, latent)."""
+        # Encode
+        h = self.encoder_conv(x)  # (batch, 128, time')
+        h = h.permute(0, 2, 1)    # (batch, time', 128)
+        latent, _ = self.encoder_lstm(h)  # (batch, time', hidden_size)
+
+        # Decode
+        h_dec, _ = self.decoder_lstm(latent)  # (batch, time', 128)
+        h_dec = h_dec.permute(0, 2, 1)        # (batch, 128, time')
+        reconstruction = self.decoder_conv(h_dec)  # (batch, input_size, time)
+
+        # Handle size mismatch
+        if reconstruction.shape[2] != x.shape[2]:
+            reconstruction = nn.functional.interpolate(
+                reconstruction, size=x.shape[2], mode='linear', align_corners=False
             )
-            self.decoder = nn.Sequential(
-                nn.Linear(latent_dim, 128),
-                nn.ReLU(),
-                nn.Linear(128, 256),
-                nn.ReLU(),
-                nn.Linear(256, in_features),
-            )
 
-        def forward(self, x):
-            z = self.encoder(x)
-            return self.decoder(z), z
+        return reconstruction, latent
 
-        def encode(self, x):
-            return self.encoder(x)
-
-    return ConvAutoencoder(input_dim, latent_dim)
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        """Encode to latent space."""
+        h = self.encoder_conv(x)
+        h = h.permute(0, 2, 1)
+        latent, _ = self.encoder_lstm(h)
+        return latent
 
 
-def train_autoencoder(model, data, n_epochs=50, batch_size=64, lr=1e-3):
-    """Train the autoencoder."""
-    import torch
-    from torch.utils.data import DataLoader, TensorDataset
+def chunk_phase_data(phase_data: np.ndarray, chunk_samples: int) -> list:
+    """Chunk phase data into overlapping windows for training."""
+    n_features, n_samples = phase_data.shape
+    chunks = []
+    stride = chunk_samples // 2  # 50% overlap for training
 
+    for start in range(0, n_samples - chunk_samples + 1, stride):
+        chunk = phase_data[:, start:start + chunk_samples]
+        chunks.append(chunk)
+
+    return chunks
+
+
+def train_autoencoder(
+    phase_data: np.ndarray,
+    n_channels: int,
+    hidden_size: int = 32,
+    n_epochs: int = 50,
+    chunk_duration: float = 5.0,
+    sfreq: float = 250.0,
+    batch_size: int = 16,
+    lr: float = 1e-3,
+) -> ConvAutoencoder:
+    """
+    Train convolutional autoencoder on phase data.
+
+    Uses overlapping chunks for training but encodes full signal for inference.
+    """
     device = torch.device("mps" if torch.backends.mps.is_available() else
                           "cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
 
-    dataset = TensorDataset(torch.FloatTensor(data))
+    # Chunk data for training
+    chunk_samples = int(chunk_duration * sfreq)
+    chunks = chunk_phase_data(phase_data, chunk_samples)
+    print(f"  Training chunks: {len(chunks)} (from {phase_data.shape[1]} samples)")
+
+    # Create dataset
+    data = torch.stack([torch.from_numpy(c) for c in chunks])
+    dataset = TensorDataset(data)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = torch.nn.MSELoss()
+    # Create model
+    model = ConvAutoencoder(n_channels=n_channels, hidden_size=hidden_size)
+    model = model.to(device)
 
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    # Train
     model.train()
     for epoch in range(n_epochs):
         total_loss = 0
         for (batch,) in loader:
-            batch = batch.to(device)
+            batch = batch.float().to(device)
             optimizer.zero_grad()
             recon, _ = model(batch)
             loss = criterion(recon, batch)
@@ -150,7 +236,34 @@ def train_autoencoder(model, data, n_epochs=50, batch_size=64, lr=1e-3):
         if (epoch + 1) % 10 == 0:
             print(f"  Epoch {epoch+1}/{n_epochs}: loss = {total_loss/len(loader):.4f}")
 
+    model.eval()
     return model
+
+
+def compute_latent_trajectory(
+    model: ConvAutoencoder,
+    phase_data: np.ndarray,
+) -> np.ndarray:
+    """
+    Compute latent trajectory by encoding the FULL signal.
+
+    This is the key difference from chunk-flatten approaches:
+    we get one latent vector per ~4 samples, not per 5-second chunk.
+
+    Returns:
+        (T', hidden_size) latent trajectory where T' ≈ T/4
+    """
+    device = next(model.parameters()).device
+    model.eval()
+
+    # Add batch dimension and encode full signal
+    x = torch.from_numpy(phase_data).float().unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        latent = model.encode(x)
+
+    # Remove batch dimension: (1, T', hidden) -> (T', hidden)
+    return latent.squeeze(0).cpu().numpy()
 
 
 def main():
@@ -211,40 +324,31 @@ def main():
     phase_data = extract_phase_representation(result.y, sfreq)
     print(f"  Phase shape: {phase_data.shape}")
 
-    # Chunk into windows for autoencoder
-    chunk_samples = int(5.0 * sfreq)  # 5 second chunks
-    n_chunks = phase_data.shape[1] // chunk_samples
-    chunks = []
-    for i in range(n_chunks):
-        start = i * chunk_samples
-        end = start + chunk_samples
-        chunk = phase_data[:, start:end].T  # (time, features)
-        chunks.append(chunk.flatten())
+    # =========================================================================
+    # Step 3: Train Convolutional Autoencoder
+    # =========================================================================
+    print("\n[Step 3] Training convolutional autoencoder...")
 
-    chunks = np.array(chunks)
-    print(f"  Chunks: {chunks.shape}")
+    model = train_autoencoder(
+        phase_data,
+        n_channels=30,
+        hidden_size=32,
+        n_epochs=args.n_epochs,
+    )
 
     # =========================================================================
-    # Step 3: Train Autoencoder
+    # Step 4: Compute Full Latent Trajectory
     # =========================================================================
-    print("\n[Step 3] Training autoencoder...")
+    print("\n[Step 4] Computing latent trajectory (full resolution)...")
 
-    import torch
-    model = create_simple_autoencoder(chunks.shape[1], latent_dim=32)
-    model = train_autoencoder(model, chunks, n_epochs=args.n_epochs)
-
-    # Compute latent representation
-    model.set_to_eval_mode = lambda: model.eval()  # Workaround
-    model.eval()
-    device = next(model.parameters()).device
-    with torch.no_grad():
-        latent = model.encode(torch.FloatTensor(chunks).to(device)).cpu().numpy()
+    latent = compute_latent_trajectory(model, phase_data)
     print(f"  Latent shape: {latent.shape}")
+    print(f"  Compression ratio: {phase_data.shape[1] / latent.shape[0]:.1f}x")
 
     # =========================================================================
-    # Step 4: Embed and Compute Metrics
+    # Step 5: Embed and Compute Metrics
     # =========================================================================
-    print("\n[Step 4] Embedding and computing metrics...")
+    print("\n[Step 5] Embedding and computing metrics...")
 
     # Standardize latent
     scaler = StandardScaler()
@@ -284,27 +388,36 @@ def main():
         bounds = (embedded[:, 0].min(), embedded[:, 0].max(),
                   embedded[:, 1].min(), embedded[:, 1].max())
 
-        ff = compute_flow_field(regime_embedded[:-1], velocity[:-1], bounds)
-        field_metrics = compute_field_metrics(ff)
+        if len(regime_embedded) > 10:
+            ff = compute_flow_field(regime_embedded[:-1], velocity[:-1], bounds)
+            field_metrics = compute_field_metrics(ff)
 
-        regime_flow_data[name] = {
-            "embedded": regime_embedded,
-            "flow_field": ff,
-            "field_metrics": field_metrics,
-        }
+            regime_flow_data[name] = {
+                "embedded": regime_embedded,
+                "flow_field": ff,
+                "field_metrics": field_metrics,
+            }
 
-        print(f"  {name}: speed={metrics['speed']:.3f}, var={metrics['explored_variance']:.2f}")
+        print(f"  {name}: speed={metrics['speed']:.4f}, var={metrics['explored_variance']:.2f}, n={mask.sum()}")
 
     # Discriminability
-    print("\n[Step 5] Computing discriminability...")
-    disc = compute_regime_discriminability(latent_scaled, labels_aligned)
+    print("\n[Step 6] Computing discriminability...")
+
+    # Window size based on actual latent length
+    window_size = max(10, len(latent_scaled) // 50)  # ~50 windows
+    disc = compute_regime_discriminability(latent_scaled, labels_aligned, window_size=window_size)
     for metric, results in disc.items():
-        print(f"  {metric}: eta_sq={results['eta_squared']:.3f} ({results['effect_size']})")
+        eta = results['eta_squared']
+        f_stat = results.get('f_statistic', float('nan'))
+        if not np.isnan(f_stat):
+            print(f"  {metric}: F={f_stat:.1f}, η²={eta:.3f} ({results['effect_size']})")
+        else:
+            print(f"  {metric}: η²={eta:.3f} ({results['effect_size']})")
 
     # =========================================================================
-    # Step 6: Generate Figures
+    # Step 7: Generate Figures
     # =========================================================================
-    print("\n[Step 6] Generating figures...")
+    print("\n[Step 7] Generating figures...")
 
     # Figure 1: Electrode time series
     fig1 = plot_electrode_timeseries(
@@ -316,7 +429,6 @@ def main():
     print("  Saved: fig_electrode_timeseries")
 
     # Figure 2: Main analysis
-    # Compute combined flow field
     from flowprint.metrics.flow_metrics import compute_velocity
     velocity_all = compute_velocity(embedded)
     bounds = (embedded[:, 0].min(), embedded[:, 0].max(),
@@ -338,12 +450,12 @@ def main():
     print("  Saved: fig_flow_fields")
 
     # Figure 4: Discriminability
-    window_metrics = compute_window_metrics(latent_scaled)
+    window_metrics = compute_window_metrics(latent_scaled, window_size=window_size)
     n_windows = len(window_metrics["speed"])
     window_labels = np.array([
-        labels_aligned[i * 50] for i in range(n_windows)
-        if i * 50 < len(labels_aligned)
-    ])[:n_windows]
+        labels_aligned[min(i * window_size, len(labels_aligned) - 1)]
+        for i in range(n_windows)
+    ])
 
     fig4 = plot_discriminability(window_metrics, window_labels, result.regime_names, disc)
     fig4.savefig(output_dir / "fig_discriminability.png", dpi=150, bbox_inches="tight")
@@ -352,7 +464,7 @@ def main():
 
     # Figure 5: Kinetic energy
     energy = compute_kinetic_energy(latent_scaled, trim_edges=True)
-    trim = 10  # Match trimming
+    trim = 10
     time_trimmed = np.linspace(0, args.duration, len(energy))
     labels_trimmed = labels_aligned[trim:-trim][:len(energy)]
 
@@ -364,8 +476,9 @@ def main():
     for name in unique_names:
         matching_ids = [i for i, n in enumerate(result.regime_names) if n == name]
         mask = np.isin(labels_trimmed, matching_ids)
-        regime_energy = energy[mask]
-        per_regime_energy[name] = compute_kinetic_energy_metrics(regime_energy)
+        if mask.sum() > 0:
+            regime_energy = energy[mask]
+            per_regime_energy[name] = compute_kinetic_energy_metrics(regime_energy)
 
     fig5 = plot_kinetic_energy(
         energy, time_trimmed, labels_trimmed, result.regime_names,
@@ -384,6 +497,8 @@ def main():
             "sfreq": sfreq,
             "regimes": unique_names,
         },
+        "latent_shape": list(latent.shape),
+        "compression_ratio": float(phase_data.shape[1] / latent.shape[0]),
         "flow_metrics": {name: {k: float(v) for k, v in m.items()}
                         for name, m in flow_metrics.items()},
         "discriminability": {
