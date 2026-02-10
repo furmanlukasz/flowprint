@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flowprint"
+version = "0.1.0"
+description = "Flow-based fingerprints of dynamical regimes on shared manifolds"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "Lukasz Furman", email = "lukasz.furman@example.com"},
+]
+keywords = [
+    "dynamical systems",
+    "time series",
+    "flow fields",
+    "latent trajectories",
+    "regime detection",
+    "oscillators",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "numpy>=1.21",
+    "scipy>=1.7",
+    "matplotlib>=3.5",
+    "scikit-learn>=1.0",
+    "umap-learn>=0.5",
+    "torch>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "black>=23.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/username/flowprint"
+Documentation = "https://github.com/username/flowprint#readme"
+Repository = "https://github.com/username/flowprint"
+
+[tool.hatch.build.targets.wheel]
+packages = ["flowprint"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
