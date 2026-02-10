@@ -19,6 +19,12 @@ Key features:
 - **Trajectory-based metrics**: speed, tortuosity, explored variance, kinetic energy
 - **Discriminability analysis** using ANOVA with effect sizes (η²)
 
+## Workflow
+
+<p align="center">
+<img src="figures/fig_workflow.png" alt="FlowPrint Workflow" width="100%">
+</p>
+
 ## Example Figures
 
 <table>
