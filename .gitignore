@@ -108,3 +108,6 @@ figures/*.pdf
 
 # Results
 results/
+
+# Claude Code context (local only)
+CLAUDE.md
