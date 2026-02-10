@@ -614,7 +614,7 @@
                 </div>
                 <div class="finding-card">
                     <h4>Kinetic Energy Signatures</h4>
-                    <p>Intermittency of kinetic energy ||v||² differs systematically across regimes, providing an additional biomarker.</p>
+                    <p>Intermittency of kinetic energy ||v||² differs systematically across regimes, providing an additional discriminative marker.</p>
                 </div>
                 <div class="finding-card">
                     <h4>Ground Truth Validation</h4>
@@ -853,34 +853,88 @@
                 .attr('stroke-width', 2)
                 .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))');
 
-            // Animate nodes for ring topology
-            if (topology === 'ring') {
-                animateRing();
-            }
+            // Start animation for the current topology
+            startAnimation(topology);
 
             // Update description
             descText.text(descriptions[topology]);
         }
 
-        function animateRing() {
-            if (currentTopology !== 'ring') return;
+        let animationId = null;
+
+        function startAnimation(topology) {
+            // Cancel any existing animation
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
 
             let phase = 0;
+
             const animate = () => {
-                if (currentTopology !== 'ring') return;
+                if (currentTopology !== topology) return;
 
-                phase += 0.05;
-                nodeGroup.selectAll('circle')
-                    .attr('r', (d, i) => {
-                        const wave = Math.sin(phase - (i * 2 * Math.PI / NUM_NODES));
-                        return NODE_RADIUS + wave * 3;
-                    })
-                    .attr('fill-opacity', (d, i) => {
-                        const wave = Math.sin(phase - (i * 2 * Math.PI / NUM_NODES));
-                        return 0.7 + wave * 0.3;
-                    });
+                phase += 0.03;
 
-                requestAnimationFrame(animate);
+                switch (topology) {
+                    case 'global':
+                        // Synchronized pulsing - all nodes breathe together
+                        const globalPulse = Math.sin(phase);
+                        nodeGroup.selectAll('circle')
+                            .attr('r', NODE_RADIUS + globalPulse * 2)
+                            .attr('fill-opacity', 0.8 + globalPulse * 0.2);
+                        // Edges pulse together too
+                        edgeGroup.selectAll('line')
+                            .attr('stroke-opacity', 0.3 + globalPulse * 0.2);
+                        break;
+
+                    case 'cluster':
+                        // Each cluster pulses at different phase
+                        nodeGroup.selectAll('circle')
+                            .attr('r', (d, i) => {
+                                const clusterPhase = phase + (d.cluster * 2 * Math.PI / 3);
+                                const pulse = Math.sin(clusterPhase);
+                                return NODE_RADIUS + pulse * 3;
+                            })
+                            .attr('fill-opacity', (d, i) => {
+                                const clusterPhase = phase + (d.cluster * 2 * Math.PI / 3);
+                                const pulse = Math.sin(clusterPhase);
+                                return 0.7 + pulse * 0.3;
+                            });
+                        break;
+
+                    case 'sparse':
+                        // Random flickering - desynchronized activity
+                        nodeGroup.selectAll('circle')
+                            .attr('r', (d, i) => {
+                                // Each node has its own random-ish frequency
+                                const freq = 0.7 + (i % 5) * 0.2;
+                                const nodePhase = phase * freq + (i * 0.5);
+                                const flicker = Math.sin(nodePhase) * Math.sin(nodePhase * 1.3);
+                                return NODE_RADIUS + flicker * 2;
+                            })
+                            .attr('fill-opacity', (d, i) => {
+                                const freq = 0.7 + (i % 5) * 0.2;
+                                const nodePhase = phase * freq + (i * 0.5);
+                                return 0.6 + Math.abs(Math.sin(nodePhase)) * 0.4;
+                            });
+                        break;
+
+                    case 'ring':
+                        // Traveling wave around the ring
+                        nodeGroup.selectAll('circle')
+                            .attr('r', (d, i) => {
+                                const wave = Math.sin(phase - (i * 2 * Math.PI / NUM_NODES));
+                                return NODE_RADIUS + wave * 3;
+                            })
+                            .attr('fill-opacity', (d, i) => {
+                                const wave = Math.sin(phase - (i * 2 * Math.PI / NUM_NODES));
+                                return 0.7 + wave * 0.3;
+                            });
+                        break;
+                }
+
+                animationId = requestAnimationFrame(animate);
             };
             animate();
         }
