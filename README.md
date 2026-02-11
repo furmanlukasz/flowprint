@@ -22,7 +22,7 @@ Key features:
 ## Workflow
 
 <p align="center">
-<img src="figures/fig_workflow.png" alt="FlowPrint Workflow" width="100%">
+<img src="docs/fig_workflow.png" alt="FlowPrint Workflow" width="100%">
 </p>
 
 ## Example Figures
@@ -30,21 +30,21 @@ Key features:
 <table>
 <tr>
 <td width="50%">
-<img src="figures/fig_analysis_main.png" alt="Main Analysis" width="100%">
+<img src="docs/fig_analysis_main.png" alt="Main Analysis" width="100%">
 <p align="center"><em>UMAP embedding, flow fields, and metrics by regime</em></p>
 </td>
 <td width="50%">
-<img src="figures/fig_discriminability.png" alt="Discriminability" width="100%">
+<img src="docs/fig_discriminability.png" alt="Discriminability" width="100%">
 <p align="center"><em>Regime discriminability with η² effect sizes</em></p>
 </td>
 </tr>
 <tr>
 <td width="50%">
-<img src="figures/fig_flow_fields.png" alt="Flow Fields" width="100%">
+<img src="docs/fig_flow_fields.png" alt="Flow Fields" width="100%">
 <p align="center"><em>Regime-specific flow field patterns</em></p>
 </td>
 <td width="50%">
-<img src="figures/fig_kinetic_energy.png" alt="Kinetic Energy" width="100%">
+<img src="docs/fig_kinetic_energy.png" alt="Kinetic Energy" width="100%">
 <p align="center"><em>Latent kinetic energy as dynamical activity proxy</em></p>
 </td>
 </tr>
