@@ -5,9 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/furmanlukasz/flowprint)
 
-**Flow-based fingerprints of dynamical regimes on shared manifolds.**
+**Flow-based characterization of dynamical regimes on shared manifolds.**
 
-FlowPrint is a framework for characterizing dynamical regimes in multivariate time series using latent trajectories, flow fields, and geometric fingerprints—rather than discrete state labels.
+FlowPrint is a framework for characterizing dynamical regimes in multivariate time series using latent trajectories, flow fields, and geometric descriptors—rather than discrete state labels.
 
 ## Overview
 
