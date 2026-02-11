@@ -18,35 +18,35 @@
   "compression_ratio": 4.0,
   "flow_metrics": {
     "global": {
-      "speed": 1.3852444887161255,
-      "speed_cv": 0.3847569227218628,
-      "tortuosity": 485.3613586425781,
-      "explored_variance": 14.944963455200195
+      "speed": 1.6969820261001587,
+      "speed_cv": 0.2892255485057831,
+      "tortuosity": 816.4846801757812,
+      "explored_variance": 22.401504516601562
     },
     "cluster": {
-      "speed": 1.4851069450378418,
-      "speed_cv": 0.3591240644454956,
-      "tortuosity": 1723.2786865234375,
-      "explored_variance": 16.144975662231445
+      "speed": 1.8489574193954468,
+      "speed_cv": 0.2479928433895111,
+      "tortuosity": 3045.210693359375,
+      "explored_variance": 24.229171752929688
     },
     "sparse": {
-      "speed": 1.0309165716171265,
-      "speed_cv": 0.3958513140678406,
-      "tortuosity": 953.0584106445312,
-      "explored_variance": 7.7479248046875
+      "speed": 1.6930454969406128,
+      "speed_cv": 0.2933558225631714,
+      "tortuosity": 1219.773193359375,
+      "explored_variance": 20.91054916381836
     },
     "ring": {
-      "speed": 1.367355465888977,
-      "speed_cv": 0.40014398097991943,
-      "tortuosity": 962.6436157226562,
-      "explored_variance": 10.104011535644531
+      "speed": 1.9216078519821167,
+      "speed_cv": 0.2847631275653839,
+      "tortuosity": 3249.00927734375,
+      "explored_variance": 21.009292602539062
     }
   },
   "discriminability": {
     "speed": {
-      "f_statistic": 105.30245869420415,
-      "p_value": 1.2206807544377832e-40,
-      "eta_squared": 0.6171182343569024,
+      "f_statistic": 19.528329148621076,
+      "p_value": 4.048967938511965e-11,
+      "eta_squared": 0.23011956845352782,
       "effect_size": "large",
       "n_windows": [
         50,
@@ -56,10 +56,10 @@
       ]
     },
     "variance": {
-      "f_statistic": 75.20506134500575,
-      "p_value": 2.0660779280683233e-32,
-      "eta_squared": 0.535121107062106,
-      "effect_size": "large",
+      "f_statistic": 9.24335841359849,
+      "p_value": 9.5322610387037e-06,
+      "eta_squared": 0.12394433430976722,
+      "effect_size": "medium",
       "n_windows": [
         50,
         50,
@@ -68,9 +68,9 @@
       ]
     },
     "tortuosity": {
-      "f_statistic": 1.4874175449966809,
-      "p_value": 0.21922304152428945,
-      "eta_squared": 0.022259814884526358,
+      "f_statistic": 0.8752819288646851,
+      "p_value": 0.45485815548034125,
+      "eta_squared": 0.013220060945217047,
       "effect_size": "small",
       "n_windows": [
         50,

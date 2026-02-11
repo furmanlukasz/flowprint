@@ -425,9 +425,8 @@ def main():
     # Discriminability (using per-regime window computation)
     print("\n[Step 6] Computing discriminability...")
 
-    # Window size: ~50 windows per regime
-    n_samples_per_regime = len(latent_clipped) // len(unique_names)
-    window_size = max(10, n_samples_per_regime // 50)
+    # Window size: 50 samples (matches original code, ~0.2s at 250Hz after 4x compression)
+    window_size = 50
     print(f"  Window size: {window_size} samples (~{len(latent_clipped) // window_size} total windows)")
 
     # Compute discriminability with proper per-regime windowing
