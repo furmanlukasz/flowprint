@@ -271,8 +271,8 @@ def main():
     parser.add_argument("--output-dir", type=str, default="figures",
                         help="Output directory for figures")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--duration", type=float, default=180.0,
-                        help="Simulation duration in seconds (default: 180s for 4 full cycles)")
+    parser.add_argument("--duration", type=float, default=None,
+                        help="Simulation duration (default: auto from n_cycles * 4 * regime_duration)")
     parser.add_argument("--n-epochs", type=int, default=50,
                         help="Autoencoder training epochs")
     parser.add_argument("--n-cycles", type=int, default=4,
@@ -305,9 +305,12 @@ def main():
     regime_order = ["global", "cluster", "sparse", "ring"]
     schedule = [(name, args.regime_duration) for _ in range(args.n_cycles) for name in regime_order]
 
-    # Calculate actual duration from schedule
+    # Calculate actual duration from schedule (overrides --duration if not set)
     scheduled_duration = args.n_cycles * 4 * args.regime_duration
-    print(f"  Schedule: {args.n_cycles} cycles × 4 regimes × {args.regime_duration}s = {scheduled_duration}s")
+    if args.duration is not None and abs(args.duration - scheduled_duration) > 0.1:
+        print(f"  Note: --duration={args.duration}s overridden by schedule={scheduled_duration}s")
+    total_duration = scheduled_duration
+    print(f"  Schedule: {args.n_cycles} cycles × 4 regimes × {args.regime_duration}s = {total_duration}s")
 
     result = net.generate(
         total_duration_s=scheduled_duration,
@@ -473,7 +476,7 @@ def main():
 
     fig2 = plot_main_analysis(
         embedded, labels_aligned, result.regime_names,
-        result.switch_times, args.duration, ff_all, flow_metrics,
+        result.switch_times, total_duration, ff_all, flow_metrics,
     )
     fig2.savefig(output_dir / "fig_analysis_main.png", dpi=150, bbox_inches="tight")
     fig2.savefig(output_dir / "fig_analysis_main.pdf", dpi=300, bbox_inches="tight")
@@ -496,7 +499,7 @@ def main():
     # Figure 5: Kinetic energy
     energy = compute_kinetic_energy(latent_clipped, trim_edges=True)
     trim = 10
-    time_trimmed = np.linspace(0, args.duration, len(energy))
+    time_trimmed = np.linspace(0, total_duration, len(energy))
     labels_trimmed = labels_aligned[trim:-trim][:len(energy)]
 
     energy_landscape = compute_energy_landscape(
@@ -522,7 +525,7 @@ def main():
     # Save results summary
     results_summary = {
         "simulation": {
-            "duration_s": args.duration,
+            "duration_s": total_duration,
             "n_channels": 30,
             "n_oscillators": 30,
             "sfreq": sfreq,
